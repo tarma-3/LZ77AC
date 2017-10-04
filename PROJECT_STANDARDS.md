@@ -1,3 +1,4 @@
+### Coding conventions
 All macros and constants in caps: `MAX_BUFFER_SIZE`, `TRACKING_ID_PREFIX`.  
 Struct names and typedef's in camelcase: `GtkWidget`, `TrackingOrder`.  
 Functions: `gtk_widget_show()`, `tracking_order_process()`.  
