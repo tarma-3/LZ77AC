@@ -1,10 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "lz77/lz77.h"
 
-void print_char(unsigned char c){
-    printf("%c",c);
-}
 
 int main(int args_number, char *args[]) {
 
@@ -15,6 +13,7 @@ int main(int args_number, char *args[]) {
 
     // Option check
     if(strcmp("-c",args[1])==0){
+        lz77_encode(args[2]);
         // COMPRESSION
         // ac_encode(lz77_encode(args[1]));
     }

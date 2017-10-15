@@ -28,10 +28,10 @@ void print_char(unsigned char c){
 }
 
 // USAGE EXAMPLE
-int main(int args_number, char *args[]){
+/*int main(int args_number, char *args[]){
 
     if(!stream_file_to(args[1],print_char)){
         // If file not exists
         exit(errno);
     }
-}
+}*/
