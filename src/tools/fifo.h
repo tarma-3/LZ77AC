@@ -1,17 +1,18 @@
-
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <memory.h>
+#include <stdbool.h>
+typedef struct fifo fifo;
 
-typedef struct circular_buffer circular_buffer;
+void fifob_free(fifo *cb);
+fifo *fifo_init(size_t capacity, size_t sz);
 
-void fifob_free(circular_buffer *cb);
+int fifo_push(const void *item,fifo *fi);
+size_t fifo_read(void *item, size_t id, fifo *fi);
 
-int fifo_push(const void *item,circular_buffer *fi);
-int fifo_delpush(const void *item, circular_buffer *cb);
-int fifo_pop(void *item,circular_buffer *fi);
+size_t fifo_getid(fifo *fi);
 
-circular_buffer *fifo_init(size_t capacity, size_t sz);
-int fifo_errorcode(circular_buffer *cb);
-size_t fifo_next(void *item, circular_buffer *fi);
+size_t fifo_next(void *item, fifo *fi);
+bool fifo_hasnext(fifo *fi);
+
+int fifo_errorcode(fifo *cb);

@@ -27,6 +27,27 @@ void print_char(unsigned char c){
     printf("%c",c);
 }
 
+
+size_t get_extlen(char *filename) {
+    char *slash = strrchr(filename, '/');
+    if(!slash) slash = filename;
+    char *dot;
+    dot = strchr(slash, '.');
+    if(!dot || dot == filename) return 0;
+    return strlen(dot);
+}
+
+const char *get_filename_ext(char *filename) {
+    char *slash = strrchr(filename, '/');
+    if(!slash) slash = filename;
+    const char *dot;
+    dot = strchr(slash, '.');
+    if(!dot || dot == filename) return "";
+    return dot;
+}
+
+
+
 // USAGE EXAMPLE
 /*int main(int args_number, char *args[]){
 

@@ -5,9 +5,8 @@
 
 
 int main(int args_number, char *args[]) {
-
     if(args_number!=3){
-        printf("usage: a.out option source_file");
+        printf("usage: a.out option source_file\n");
         exit(2);
     }
 
@@ -22,7 +21,7 @@ int main(int args_number, char *args[]) {
         // lz77_decode(ac_decode(args[1]));
     }
     else {
-        fprintf(stderr,"Error on first parameter '%s': Invalid option", args[1]);
+        fprintf(stderr,"Error on first parameter '%s': Invalid option\n", args[1]);
         exit(107);
     }
 

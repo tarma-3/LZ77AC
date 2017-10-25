@@ -7,3 +7,5 @@
 
 #endif //LZ77AC_FILE_H
 int stream_file_to(char *args,void (*output_handler)(unsigned char));
+size_t get_extlen(char *filename);
+const char *get_filename_ext(char *filename);
