@@ -3,7 +3,6 @@
 #include <string.h>
 #include <errno.h>
 #include "ac/ac_encoding.h"
-#include "ac/element.h"
 
 int stream_file_to(char *args, void (*output_handler)(unsigned char)) {
     // This function return 1 if the file exists
@@ -20,16 +19,13 @@ int stream_file_to(char *args, void (*output_handler)(unsigned char)) {
     return 0;
 }
 
-int stream_array_to(int frequency[], void (*output_handler)(unsigned char)) {
+int stream_array_to(int frequency[], void (*output_handler)(unsigned char, int)) {
     //Send each char with relative frequency from array frequency
     //only if frequency is not empty
     //to handler function
     for (int i = 0; i < 255; i++) {
         if (frequency[i] != 0) {
-            //output_handler((unsigned char) frequency[i]);
-            Element *e = initElement((unsigned char) frequency[i], frequency[i]);
-            printElement(e);
-            printf("%c = %u\n", (char) i, frequency[i]);
+            output_handler((unsigned char) frequency[i], i);
         }
     }
     return 1;
@@ -50,7 +46,10 @@ int main(int args_number, char *args[]) {
     if (strcmp("-c", args[1]) == 0) {
         stream_file_to(args[2], build_frequency);
         print_frequency();
-        stream_array_to(get_frequency(), ac_encode);
+        stream_array_to(get_frequency(), ac_ranges);
+
+        stream_file_to(args[2], ac_encode);
+
         // COMPRESSION
         // ac_encode(lz77_encode(args[1]));
     } else if (strcmp("-d", args[1]) == 0) {
