@@ -2,8 +2,12 @@ cmake_minimum_required(VERSION 3.8)
 project(LZ77AC)
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99")
-set(SOURCE_FILES src/main.c src/lz77/lz77.c src/lz77/lz77.h src/tools/file.c src/tools/file.h src/tools/fifo.c src/tools/fifo.h)
+set(SOURCE_FILES src/main.c src/lz77/lz77.c src/lz77/lz77.h src/tools/kmp/kmpsearch.c src/tools/kmp/kmpsearch.h src/tools/file.c src/tools/file.h src/tools/fifo.c src/tools/fifo.h)
+set(KMP_SOURCE_FILES src/tools/kmp/kmpsearch.c src/tools/kmp/kmpsearch.h src/tools/kmp/test.c)
+
 add_executable(LZ77AC ${SOURCE_FILES})
+add_executable(KMP ${KMP_SOURCE_FILES})
+
 if (CMAKE_BUILD_TYPE MATCHES Debug)
     add_definitions(-DDEBUG=1)
     add_definitions(-DDEBUG_FIFO_VERBOSE_LOG=1)
