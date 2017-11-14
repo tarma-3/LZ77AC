@@ -2,7 +2,7 @@
 // Created by Enrico on 06.12.16.
 //
 
-#include "fifo.h"
+#include "cibuff.h"
 
 typedef struct _circularbuffer {
     void *buffer;       // pointer to buffer
@@ -23,7 +23,11 @@ void log_insertion(const void *item, CircularBuffer *cb){
     fprintf(log_fifoInsert,"\n[+ new item] %c | Cursor id: %zu | First In Id: %zu\n",log_m,cb->cu_index,cb->fi_index);
 
     for(int i=0;i<cb->capacity;i++){
-        fprintf(log_fifoInsert," %02d",i);
+        if(cb->fi_index == i)
+            fprintf(log_fifoInsert," %2s", "FI");
+        else if(cb->cu_index == i)
+            fprintf(log_fifoInsert," %2s", "CU");
+        else fprintf(log_fifoInsert," %02d",i);
     }
     fprintf(log_fifoInsert,"\n");
 
@@ -37,10 +41,10 @@ void log_insertion(const void *item, CircularBuffer *cb){
 
 CircularBuffer *cb_init(size_t capacity, size_t sz) {
 
-    #if DEBUG_FIFO_VERBOSE_LOG
-        mkdir("./log",0777);
-        log_fifoInsert = fopen("./log/log_verb-CircularBuffer.txt", "wb+");
-    #endif
+#if DEBUG_FIFO_VERBOSE_LOG
+    mkdir("./log",0777);
+    log_fifoInsert = fopen("./log/log_verb-CircularBuffer.txt", "wb+");
+#endif
 
     if(capacity <= 0){
         fprintf(stderr,"Error: CircularBuffer must have at least 1 element");
@@ -61,14 +65,20 @@ CircularBuffer *cb_init(size_t capacity, size_t sz) {
     fi->sz = sz;
     fi->hasNext = false;
 
-    #if DEBUG_FIFO_VERBOSE_LOG
-        fprintf(log_fifoInsert,"FIFO INIT: [capacity] %zu\n-\n",fi->capacity);
-    #endif
+#if DEBUG_FIFO_VERBOSE_LOG
+    fprintf(log_fifoInsert,"FIFO INIT: [capacity] %zu\n-\n",fi->capacity);
+#endif
 
     return fi;
 }
 
-
+void cb_reset(CircularBuffer *cb){
+    cb->cu_index = cb->fi_index;
+    if(cb->elements>1){
+        cb->hasNext = true;
+    }
+    else cb->hasNext = false;
+}
 
 void cb_free(CircularBuffer *cb) {
     free(cb->buffer);
@@ -82,17 +92,6 @@ void cb_free(CircularBuffer *cb) {
  * @return
  */
 
-
-size_t cb_setid(size_t id, CircularBuffer *cb){
-    //TODO: Mettere a posto
-    if(0 >= id || id > cb->elements){
-        fprintf(stderr,"Errore: valore cursore non valido, range da [1 - %zu]\n"
-                " Input: %zu\n",cb->elements,id);
-        exit(1);
-    }
-   // cb->cu_index = ctoi(id, cb);
-    return 0;
-}
 
 size_t cb_getid(CircularBuffer *cb){
     long distance = cb->fi_index-cb->cu_index;
@@ -108,37 +107,31 @@ size_t cb_getid(CircularBuffer *cb){
  * @param cb
  * @return
  */
-int cb_push(const void *item, CircularBuffer *cb){
+bool cb_push(const void *item, CircularBuffer *cb){
     cb->hasNext = true;
+    // Nel caso il buffer non sia pieno e quindi non sovrascriviamo nessun carattere
     if(cb->elements<cb->capacity){
         //printf("Inserisco in cb->buffer[%zu]\n ",cb->elements);
         memcpy(&(cb->buffer[cb->elements]), item, cb->sz);
         cb->elements++;
-        cb->cu_index = 0;
 
-        #if DEBUG_FIFO_VERBOSE_LOG
+#if DEBUG_FIFO_VERBOSE_LOG
         log_insertion(item,cb);
-        #endif
+#endif
 
         return 0;
     }
-    //printf("Inserisco in cb->buffer[%zu]\n ",cb->fi_index);
+    // Nel caso il buffer sia pieno e quindi sovrascriviamo il FI
     memcpy(&(cb->buffer[cb->fi_index]), item, cb->sz);
+    if (cb->fi_index==cb->cu_index)
+        cb->cu_index=++cb->cu_index%cb->capacity;
     (++(cb->fi_index));
     cb->fi_index = cb->fi_index%cb->capacity;
-    cb->cu_index = cb->fi_index;
 
-    #if DEBUG_FIFO_VERBOSE_LOG
+#if DEBUG_FIFO_VERBOSE_LOG
     log_insertion(item,cb);
-    #endif
+#endif
 
-    return 1;
-}
-
-size_t fifo_read(void *item, size_t id, CircularBuffer *cb) {
-    cb_setid(id,cb);
-    memcpy(item,&(cb->buffer[cb->cu_index]), cb->sz);
-    if((cb->cu_index+1)%cb->elements==cb->fi_index) cb->hasNext = false;
     return 1;
 }
 
@@ -146,32 +139,75 @@ bool cb_hasnext(CircularBuffer *fi) {
     return fi->hasNext;
 }
 
+
+void _updatenext(CircularBuffer *cb){
+    cb->cu_index= (++cb->cu_index)%cb->elements;
+    if((cb->cu_index)%cb->elements==cb->fi_index) cb->hasNext = false;
+}
 /**
  *
  * @param item The item to push
- * @param fi Pointer to struct
+ * @param cb Pointer to struct
  * @return
  */
-size_t cb_next(void *item, CircularBuffer *fi) {
+size_t cb_next(void *item, CircularBuffer *cb) {
 
-    if(!cb_hasnext(fi)){
+    if(!cb_hasnext(cb)){
         fprintf(stderr,"Error: FIFO -> End of buffer\n");
         exit(1);
     }
-    memcpy(item,&(fi->buffer[fi->cu_index]), fi->sz);
+    memcpy(item,&(cb->buffer[cb->cu_index]), cb->sz);
 
-    size_t elementID = cb_getid(fi);
+    size_t elementID = cb_getid(cb);
 
-    fi->cu_index= (++fi->cu_index)%fi->elements;
-    if((fi->cu_index)%fi->elements==fi->fi_index) fi->hasNext = false;
+    _updatenext(cb);
 
 #if DEBUG_FIFO_VERBOSE_LOG
     unsigned char log_m;
-    memcpy(&log_m, item, fi->sz);
-    fprintf(log_fifoInsert,"[+ next item] %c | element_id %2zu | next cu_index: %02zu | "
-            "Has next: ",log_m,elementID,fi->cu_index);
-    fprintf(log_fifoInsert,fi->hasNext ? "true\n" : "false\n");
+    memcpy(&log_m, item, cb->sz);
+    fprintf(log_fifoInsert,"[= next item] %c | element_id %2zu | next cu_index: %2zu | "
+            "Has next: ",log_m,elementID,cb->cu_index);
+    fprintf(log_fifoInsert,cb->hasNext ? "true\n" : "false\n");
 #endif
     return elementID;
 }
 
+size_t cb_pointed(void *item, CircularBuffer *cb) {
+
+    memcpy(item,&(cb->buffer[cb->cu_index]), cb->sz);
+
+    size_t elementID = cb_getid(cb);
+
+#if DEBUG_FIFO_VERBOSE_LOG
+    unsigned char log_m;
+    memcpy(&log_m, item, cb->sz);
+    fprintf(log_fifoInsert,"[= poin item] %c | element_id %2zu | next cu_index: %2zu | "
+            "Has next: ",log_m,elementID,cb->cu_index);
+    fprintf(log_fifoInsert,cb->hasNext ? "true\n" : "false\n");
+#endif
+    return elementID;
+}
+
+size_t cb_nofel(CircularBuffer *cb){
+    return cb->elements;
+}
+
+void cb_read(size_t id, void *item, CircularBuffer *cb) {
+    if(id >= cb->capacity){
+        fprintf(stderr,"Error: Circular Buffer -> Out of bounds\n");
+        exit(1);
+    }
+    memcpy(item,&(cb->buffer[(cb->fi_index+id)%cb->elements]), cb->sz);
+    cb->cu_index = (cb->fi_index+id)%cb->elements;
+
+    _updatenext(cb);
+
+#if DEBUG_FIFO_VERBOSE_LOG
+    unsigned char log_m;
+    memcpy(&log_m, item, cb->sz);
+    fprintf(log_fifoInsert,"[= read item] %c | element_id %2zu | next cu_index: %2zu | "
+            "Has next: ",log_m,id,cb->cu_index);
+    fprintf(log_fifoInsert,cb->hasNext ? "true\n" : "false\n");
+#endif
+
+}

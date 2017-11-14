@@ -1,0 +1,1 @@
+cu_index -> Indica l'indice dell'array di supporto dove andremo a leggere il prossimo carattere.

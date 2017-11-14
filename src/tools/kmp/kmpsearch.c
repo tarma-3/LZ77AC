@@ -3,6 +3,8 @@
 //
 
 #include "kmpsearch.h"
+#include "../charcb/cb/cibuff.h"
+#include "../charcb/charcb.h"
 #include <stdlib.h>
 
 typedef struct _prefix_arr {
@@ -10,7 +12,12 @@ typedef struct _prefix_arr {
     int *T;
 } PrefixArray;
 
-PrefixArray *_build_table(const char P[]) {
+typedef struct _kmpsearch{
+    PrefixArray pr_arr;
+    bool is_init;
+} KMPSearch;
+
+PrefixArray *_build_table(char P[]) {
     PrefixArray *parr;
     parr = malloc(sizeof(struct _prefix_arr));
 
@@ -37,7 +44,7 @@ PrefixArray *_build_table(const char P[]) {
     return parr;
 }
 
-void *_free_table(PrefixArray *parr) {
+void _free_table(PrefixArray *parr) {
     free(parr->T);
     free(parr);
 }
@@ -60,6 +67,25 @@ long _core(const char P[], const char S[], PrefixArray *parr, size_t n) {
     return -1;
 }
 
+long _core_struct(const char *P, CircularBuffer *cb, PrefixArray *parr,size_t pattern_index) {
+    while (uccb_hasnext(cb)) {
+        if (uccb_pointed(cb) == P[pattern_index]) {
+            uccb_next(cb);
+            pattern_index++;
+        }
+        else {
+            if (pattern_index != 0) {
+                pattern_index = (size_t) parr->T[--pattern_index];
+            } else uccb_next(cb);
+        }
+        // Pattern finito, match trovato
+        if (pattern_index == parr->length) {
+            return (long) uccb_getid(cb) - parr->length;
+        }
+    }
+    return -1;
+}
+
 long strnmatch(const char *P, const char *S,size_t n) {
     PrefixArray *T = _build_table(P);
     long result = _core(P, S, T,n);
@@ -69,5 +95,12 @@ long strnmatch(const char *P, const char *S,size_t n) {
 
 long strmatch(const char *P, const char *S) {
     return strnmatch(P,S,0);
+}
+
+long structmatchn(char *P,CircularBuffer *cb,size_t pattern_index){
+    PrefixArray *T = _build_table(P);
+    long result = _core_struct(P, cb, T,pattern_index);
+    _free_table(T);
+    return result;
 }
 
