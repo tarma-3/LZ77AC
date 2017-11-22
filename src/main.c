@@ -3,6 +3,7 @@
 #include <string.h>
 #include <errno.h>
 #include "ac/ac_encoding.h"
+#include "ac/ac_decoding.h"
 
 int stream_file_to(char *args, void (*output_handler)(unsigned char)) {
     // This function return 1 if the file exists
@@ -44,14 +45,28 @@ int main(int args_number, char *args[]) {
 
     // Option check
     if (strcmp("-c", args[1]) == 0) {
+        //Build frequencies
         stream_file_to(args[2], build_frequency);
+        //Print file Log debug
         print_frequency();
+        //Stream the frequency array to
+        //build ranges first time
         stream_array_to(get_frequency(), ac_ranges);
 
+        //stream file to encode to
+        //ac_encode
         stream_file_to(args[2], ac_encode);
 
         // COMPRESSION
         // ac_encode(lz77_encode(args[1]));
+
+
+        //TEST DECOMPRESSION
+        // ** IN PROGRESS, NOT WORKING **
+        set_total_char(get_total_char());
+        ac_decode(set_frequency(get_frequency(), 255));
+        //read_output();
+
     } else if (strcmp("-d", args[1]) == 0) {
         // DECOMPRESSION
         // lz77_decode(ac_decode(args[1]));

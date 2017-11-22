@@ -5,6 +5,8 @@
 #ifndef LZ77AC_AC_ENCODING_H
 #define LZ77AC_AC_ENCODING_H
 
+int get_total_char();
+
 void ac_ranges(unsigned char next_char, int i);
 
 void ac_encode(unsigned char next_char);

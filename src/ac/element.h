@@ -7,13 +7,13 @@
 #define LZ77AC_ELEMENT_H
 typedef struct element Element;
 
-Element *init_element(unsigned char c, double fr);
+Element *init_element(unsigned char c, int fr);
 
 void free_element(Element *el);
 
-double get_element_start(Element *el);
+uint32_t get_element_start(Element *el);
 
-double get_element_end(Element *el);
+uint32_t get_element_end(Element *el);
 
 unsigned char get_element_char(Element *el);
 
@@ -21,14 +21,20 @@ void print_element(Element *el);
 
 void print_element_file(Element *el, FILE *f);
 
-double get_element_frequency(Element *el);
+int get_element_frequency(Element *el);
 
-void set_element_range(Element *el, double range);
+void set_element_range(Element *el, uint32_t range);
 
-void set_element_points(Element *el, double start, double end);
+void set_element_points(Element *el, uint32_t start, uint32_t end);
 
-void set_element_frequency(Element *el, double frq);
+void set_element_frequency(Element *el, int frq);
 
-double get_element_range(Element *el);
+uint32_t get_element_range(Element *el);
+
+int is_in_range(Element *el, uint32_t value);
+
+char *int_to_binary(unsigned int val, char *buff, int sz);
+
+char *check_output_range(char *low, char *high, int size);
 
 #endif //LZ77AC_ELEMENT_H
