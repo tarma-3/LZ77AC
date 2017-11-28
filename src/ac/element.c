@@ -82,35 +82,23 @@ void set_element_frequency(Element *el, int frq) {
 }
 
 /**
- * This function will show
- * the range as binary
  *
- * https://stackoverflow.com/questions/699968/display-the-binary-representation-of-a-number-in-c
+ * @param val value to convert to binary
+ * @param sz size of integer value
+ * @return char * pointer to space containg char rappresentation of
+ * binary value
  */
-char *int_to_binary(unsigned int val, char *buff, int sz) {
-    //char array to store result
-    char *pbuff = buff;
-
-    //Lo zero
-    if (val == 0) {
-        int i;
-        for (i = 0; i < sz; i++) {
-            pbuff[i] = '0';
-        }
-        pbuff[i + 1] = '\0';
+char *int_to_binary(unsigned int val, int sz) {
+    char *ptr_to_char=malloc(sizeof(char)*(sz-1));
+    int mask = 1;
+    mask = mask << (sz-1);
+    int i;
+    for (i = 0; i <= sz; i++) {
+        ptr_to_char[i]=(((val & mask) == 0) ? '0' : '1');
+        val = val << 1;
     }
-
-    /* Work from the end of the buffer back. */
-    pbuff += sz;
-    *pbuff-- = '\0';
-
-    /* For each bit (going backwards) store character. */
-    for (int i = sz; i > 0; i--) {
-        *pbuff-- = ((val & 1) == 1) ? '1' : '0';
-        //next bit.
-        val >>= 1;
-    }
-    return pbuff + 1;
+    ptr_to_char[sz]='\0';
+    return ptr_to_char;
 }
 
 int is_in_range(Element *el, uint32_t value) {
@@ -119,8 +107,6 @@ int is_in_range(Element *el, uint32_t value) {
 
 char *check_output_range(char *low, char *high, int size) {
     //Persistente nel tempo
-    //printf("%s\n",low);
-    //printf("%s\n",low);
 
     char *to_output = (char *) malloc(size);
     int j = 0;
@@ -130,9 +116,14 @@ char *check_output_range(char *low, char *high, int size) {
             to_output[j] = low[i];
             j++;
         } else {
-            to_output[++j] = '\0';
+            to_output[j] = '\0';
             return to_output;
         }
     }
     return to_output;
+}
+
+long binary_to_int(char *binary, int sz) {
+    long l = strtol(binary, 0, 2);
+    return l;
 }

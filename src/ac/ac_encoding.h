@@ -17,5 +17,7 @@ void print_frequency();
 
 int *get_frequency();
 
+void ac_end();
+
 
 #endif //LZ77AC_AC_ENCODING_H

@@ -2,6 +2,7 @@
 // Created by alice on 10.10.17.
 //
 #include <stdio.h>
+#include <string.h>
 #include "element.h"
 
 #if DEBUG_FILE_PRINT
@@ -38,12 +39,65 @@ static int n = 0;
 static uint32_t low = 0;
 static uint32_t high = 0x7FFFFFFF;
 
+//Buffer output to file
+static char buffer[8]="33333333";
+
+//Count char to EOF
+static int counter_to_EOF=0;
+
+
+void ac_end(){
+    //empty buffer
+
+    //write to file
+    printf("THIS IS THE END");
+}
+
 /**
  *
  * @return int total_char that indicates all char encoded
  */
 int get_total_char() {
     return (total_char);
+}
+
+/**
+ * Manages output to file
+ * writing 8 bit from buffer
+ * @param bit_to_out
+ */
+void write_8_bit_to_out(char *bit_to_out){
+    int buf_index=0;
+    printf("%s\n", bit_to_out);
+    for (int i = 0; i < strlen(bit_to_out); i++) {
+        if(buf_index==strlen(buffer)){
+            //printf("BUFFER write: %s", buffer);
+            //buf char to buf int
+            long l_bin=binary_to_int(buffer, 32);
+            printf("%li ", l_bin);
+            fwrite(&l_bin, 1, 1, f_output);
+            char ptr[strlen(bit_to_out)-i];
+            //strncpy(ptr, &bit_to_out[i], sizeof(bit_to_out)-i);
+            strncpy(ptr, &bit_to_out[i], sizeof(bit_to_out)-i);
+            strcpy(buffer, "33333333");
+            write_8_bit_to_out(ptr);
+            break;
+        }
+
+        if(buffer[buf_index]=='3'){
+            buffer[buf_index]=bit_to_out[i];
+            buf_index++;
+        }
+        else{
+            buf_index++;
+            i--;
+        }
+
+    }
+    for (int i = 0; i < strlen(buffer); i++) {
+        printf("%c ", buffer[i]);
+    }
+    printf("\n------\n");
 }
 
 /**
@@ -77,9 +131,10 @@ void ac_ranges(unsigned char next_char, int i) {
     print_element_file(p, f_enc);
 #endif
 
-    //writing output file
-    f_output = fopen("ac_output", "w");
-    fprintf(f_output, "%d", (low + high) / 2);
+    //writing output file FINAL output
+    //f_output = fopen("ac_output", "wb");
+    //fprintf(f_output, "%d", (low + high) / 2);
+    // fprintf(f_output, "%s ", int_to_binary(low, 32));
 }
 
 /**
@@ -91,22 +146,52 @@ void ac_encode(unsigned char next_char) {
         if (get_element_char(pointer_to_char[i]) == next_char) {
             low = get_element_start(pointer_to_char[i]);
             high = get_element_end(pointer_to_char[i]);
-#if DEBUG_FILE_PRINT
-            fprintf(f_enc, "\nNext CHAR:\t%c\n\n", next_char);
-            fprintf(f_enc, "\nLow - High:\t%u - %u\n\n", low, high);
 
             int size = 32;
-            char bufSt[size + 1];
-            char bufEn[size + 1];
 
-            char *lowBin = int_to_binary(low, bufSt, size);
-            char *highBin = int_to_binary(high, bufEn, size);
+            char *low_bin = int_to_binary(low, size);
+            char *high_bin = int_to_binary(high, size);
 
-            fprintf(f_enc, "\nBinary rappresentation\n START %s\n END   %s\n\n", lowBin,
-                    highBin);
+            //Binary bit that don't change this will be sent out
+            //and ranges will update
+            char *bit_to_out=check_output_range(low_bin, high_bin, size);
 
-            fprintf(f_enc, "\nEquals bit: %s\n", check_output_range(lowBin, highBin, size));
+            //every 8 bit
+            write_8_bit_to_out(bit_to_out);
+            //fwrite(buffer, 8, 1, f_output);
+            //fprintf(f_output, bit_to_out);
+
+#if DEBUG_FILE_PRINT
+            //Binary rappresentation
+            fprintf(f_enc, "\nBinary rappresentation\n START %s\n END   %s\n\n", low_bin,
+                    high_bin);
+
+            fprintf(f_enc, "\nEquals bit: %s\n", bit_to_out);
 #endif
+
+            //Shift
+            for (int j = 0; j < strlen(bit_to_out); j++) {
+                low=low<<1;
+                high=(high<<1)|1;
+            }
+
+            low_bin = int_to_binary(low, size);
+            high_bin = int_to_binary(high, size);
+
+#if DEBUG_FILE_PRINT
+            //Binary rappresentation
+            fprintf(f_enc, "\nBinary rappresentation\n START %s\n END   %s\n\n", low_bin,
+                    high_bin);
+
+            fprintf(f_enc, "\nNext CHAR:\t%c\n\n", next_char);
+            fprintf(f_enc, "\nLow - High:\t%u - %u\n\n", low, high);
+#endif
+
+            printf("COUNTER:\t%d - %d\n", counter_to_EOF, total_char);
+            if((counter_to_EOF+1)==total_char){
+                ac_end();
+            }
+            counter_to_EOF++;
         }
     }
 
@@ -143,6 +228,7 @@ void build_frequency(unsigned char next_char) {
  * init debug files
  */
 void print_frequency() {
+    f_output = fopen("ac_output", "wb");
 #if DEBUG_FILE_PRINT
     f_freq = fopen("f_freq.txt", "w+");
     f_enc = fopen("ac_ranges.txt", "w+");

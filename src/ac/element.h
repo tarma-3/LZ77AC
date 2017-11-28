@@ -33,8 +33,10 @@ uint32_t get_element_range(Element *el);
 
 int is_in_range(Element *el, uint32_t value);
 
-char *int_to_binary(unsigned int val, char *buff, int sz);
+char *int_to_binary(unsigned int val, int sz);
 
 char *check_output_range(char *low, char *high, int size);
+
+long binary_to_int(char *binary, int sz);
 
 #endif //LZ77AC_ELEMENT_H
