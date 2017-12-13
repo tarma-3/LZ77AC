@@ -3,6 +3,7 @@
 //
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 #include "element.h"
 
 #if DEBUG_FILE_PRINT
@@ -40,18 +41,10 @@ static uint32_t low = 0;
 static uint32_t high = 0x7FFFFFFF;
 
 //Buffer output to file
-static char buffer[8]="33333333";
+static char buffer[9]="33333333";
 
 //Count char to EOF
 static int counter_to_EOF=0;
-
-
-void ac_end(){
-    //empty buffer
-
-    //write to file
-    printf("THIS IS THE END");
-}
 
 /**
  *
@@ -68,20 +61,20 @@ int get_total_char() {
  */
 void write_8_bit_to_out(char *bit_to_out){
     int buf_index=0;
-    printf("%s\n", bit_to_out);
+    //printf("%s\n", bit_to_out);
     for (int i = 0; i < strlen(bit_to_out); i++) {
-        if(buf_index==strlen(buffer)){
+        if(buf_index==8){
             //printf("BUFFER write: %s", buffer);
             //buf char to buf int
             long l_bin=binary_to_int(buffer, 32);
-            printf("%li ", l_bin);
+            //printf("%li ", l_bin);
             fwrite(&l_bin, 1, 1, f_output);
             char ptr[strlen(bit_to_out)-i];
             //strncpy(ptr, &bit_to_out[i], sizeof(bit_to_out)-i);
-            strncpy(ptr, &bit_to_out[i], sizeof(bit_to_out)-i);
+            strncpy(ptr, &bit_to_out[i], strlen(bit_to_out)-i);
             strcpy(buffer, "33333333");
             write_8_bit_to_out(ptr);
-            break;
+            return;
         }
 
         if(buffer[buf_index]=='3'){
@@ -94,10 +87,29 @@ void write_8_bit_to_out(char *bit_to_out){
         }
 
     }
-    for (int i = 0; i < strlen(buffer); i++) {
+    for (int i = 0; i < 8; i++) {
         printf("%c ", buffer[i]);
     }
     printf("\n------\n");
+}
+
+void ac_end(){
+    printf("\nEND\n");
+    //fill buffer with low val
+    printf("%s ", int_to_binary(low, 32));
+    write_8_bit_to_out(int_to_binary(low, 32));
+    //out last bit in buffer
+    for(int i=0; i<8; i++){
+        if(buffer[i]=='3'){
+            buffer[i]='0';
+        }
+    }
+    printf("Last writing---\n");
+    long l_bin=binary_to_int(buffer, 32);
+    fwrite(&l_bin, 1, 1, f_output);
+    //long intval=8;
+    //fwrite(&intval, 1, 1, f_output);
+    fclose(f_output);
 }
 
 /**
@@ -186,12 +198,15 @@ void ac_encode(unsigned char next_char) {
             fprintf(f_enc, "\nNext CHAR:\t%c\n\n", next_char);
             fprintf(f_enc, "\nLow - High:\t%u - %u\n\n", low, high);
 #endif
-
             printf("COUNTER:\t%d - %d\n", counter_to_EOF, total_char);
             if((counter_to_EOF+1)==total_char){
                 ac_end();
             }
             counter_to_EOF++;
+
+            //free low and high pointer
+            free(low_bin);
+            free(high_bin);
         }
     }
 
@@ -204,7 +219,13 @@ void ac_encode(unsigned char next_char) {
     fprintf(f_enc, "\nOld as low:\t%u\n\n", old);
 #endif
 
-    //Part to recalculate every range
+    //free pointer?
+    for (int i = 0; i < 255; i++) {
+        free_element(pointer_to_char[i]);
+        pointer_to_char[i]=0;
+    }
+
+    //Part to re-calculate every range
     for (int i = 0; i < 255; i++) {
         if (frequency[i] != 0) {
             ac_ranges((unsigned char) frequency[i], i);

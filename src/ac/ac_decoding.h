@@ -7,12 +7,14 @@
 #ifndef LZ77AC_AC_DECODING_H
 #define LZ77AC_AC_DECODING_H
 
-void dac_ranges(int *frequency, uint32_t output);
+void dac_ranges(unsigned char next_char, int i);
 
-void ac_decode(int *frq);
+void ac_decode();
 
-int *set_frequency(int *frq, int len);
+void set_frequency(int *frq, int len);
 
 void set_total_char(int t_ch);
+
+void read_in_32();
 
 #endif //LZ77AC_AC_DECODING_H

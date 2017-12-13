@@ -64,7 +64,10 @@ int main(int args_number, char *args[]) {
         //TEST DECOMPRESSION
         // ** IN PROGRESS, NOT WORKING **
         set_total_char(get_total_char());
-        ac_decode(set_frequency(get_frequency(), 255));
+        set_frequency(get_frequency(), 255);
+        read_in_32();
+        stream_array_to(get_frequency(), dac_ranges);
+        ac_decode();
         //read_output();
 
     } else if (strcmp("-d", args[1]) == 0) {
