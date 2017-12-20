@@ -61,8 +61,11 @@ int get_total_char() {
  */
 void write_8_bit_to_out(char *bit_to_out){
     int buf_index=0;
-    //printf("%s\n", bit_to_out);
+    printf("To write in %s\n", bit_to_out);
     for (int i = 0; i < strlen(bit_to_out); i++) {
+        if(buffer[i]!='3' && buffer[i]!='0' && buffer[i]!='1'){
+            printf("We have a problem HOWWW????");
+        }
         if(buf_index==8){
             //printf("BUFFER write: %s", buffer);
             //buf char to buf int
@@ -100,7 +103,7 @@ void ac_end(){
     write_8_bit_to_out(int_to_binary(low, 32));
     //out last bit in buffer
     for(int i=0; i<8; i++){
-        if(buffer[i]=='3'){
+        if(!(buffer[i]!='3')){
             buffer[i]='0';
         }
     }
@@ -198,11 +201,12 @@ void ac_encode(unsigned char next_char) {
             fprintf(f_enc, "\nNext CHAR:\t%c\n\n", next_char);
             fprintf(f_enc, "\nLow - High:\t%u - %u\n\n", low, high);
 #endif
-            printf("COUNTER:\t%d - %d\n", counter_to_EOF, total_char);
-            if((counter_to_EOF+1)==total_char){
-                ac_end();
-            }
-            counter_to_EOF++;
+            //printf("COUNTER:\t%d - %d\n", counter_to_EOF, total_char);
+            /*if((counter_to_EOF+1)==total_char){
+                fprintf(f_enc, "END WRITE");
+                //ac_end();
+            }*/
+            //counter_to_EOF++;
 
             //free low and high pointer
             free(low_bin);
@@ -216,7 +220,11 @@ void ac_encode(unsigned char next_char) {
 
 #if DEBUG_FILE_PRINT
     fprintf(f_enc, "\n=======================================\n\n");
+    fprintf(f_enc, "CHAR NEXT CHAR, %c ---------------------------\n", next_char);
     fprintf(f_enc, "\nOld as low:\t%u\n\n", old);
+    if(low>high){
+        printf("We have a problem");
+    }
 #endif
 
     //free pointer?
@@ -231,6 +239,18 @@ void ac_encode(unsigned char next_char) {
             ac_ranges((unsigned char) frequency[i], i);
         }
     }
+    //printf("COUNTER:\t%d - %d\n", counter_to_EOF, total_char);
+    if((counter_to_EOF+1)==total_char){
+        counter_to_EOF++;
+        ac_encode(next_char);
+
+        fprintf(f_enc, "END WRITE");
+        fprintf(f_enc, "\nBinary rappresentation\n START %s\n END   %s\n\n", int_to_binary(low, 32),
+                int_to_binary(high, 32));
+
+        ac_end();
+    }
+    counter_to_EOF++;
 }
 
 /**
@@ -258,4 +278,8 @@ void print_frequency() {
     }
     fclose(f_freq);
 #endif
+}
+
+void set_to_counter_EOF(){
+    counter_to_EOF++;
 }

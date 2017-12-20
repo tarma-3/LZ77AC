@@ -17,4 +17,6 @@ void set_total_char(int t_ch);
 
 void read_in_32();
 
+void set_to_counter_EOF();
+
 #endif //LZ77AC_AC_DECODING_H

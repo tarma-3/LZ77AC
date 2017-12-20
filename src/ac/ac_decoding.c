@@ -26,6 +26,10 @@ static int flag_exit = 1; //boolean
 static uint32_t output = 0;
 static FILE *f_out;
 
+//shift
+static int buffer_full=0;
+static int shift=1;
+
 void read_in_32() {
     fread(&output, sizeof(uint32_t), 1, f_out);
     //00011010  00010010  11110110  10000100
@@ -58,7 +62,7 @@ void dac_ranges(unsigned char next_char, int i) {
         if (is_in_range(p, output)) {
 #if DEBUG_FILE_PRINT
             fprintf(dec_ranges, "\nCHAR %c\n\n", get_element_char(p));
-            fprintf(dec_output, "%c ", get_element_char(p));
+            fprintf(dec_output, "%c", get_element_char(p));
 #endif
             low = get_element_start(p);
             high = get_element_end(p);
@@ -82,13 +86,20 @@ void dac_ranges(unsigned char next_char, int i) {
                 //shitf bit_to_out out of output????
                 //fseek(f_out, strlen(bit_to_out), SEEK_SET);
 
-                output = output << strlen(bit_to_out);
+                output = output << 1;
                 //read_in_32();
-
+                //buffer_full+=strlen(bit_to_out);
+                buffer_full++;
+                if(buffer_full==8){
+                    fprintf(dec_ranges, "\nFull buffer\": %s\n", int_to_binary(output, 32));
+                    fseek(f_out, shift, SEEK_SET);
+                    read_in_32();
+                    buffer_full=0;
+                    shift++;
+                }
 
                 //OUT EVERY 8 BIT
                 //output += bit_to_out[j];
-                fprintf(dec_ranges, "\noutput: %li\n", output);
             }
 
             low_bin = int_to_binary(low, 32);
