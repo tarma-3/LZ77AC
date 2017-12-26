@@ -6,6 +6,9 @@
 #include <stdlib.h>
 #include "element.h"
 
+#define ARRLEN 256
+//#define uint32_t int
+
 #if DEBUG_FILE_PRINT
 //File print Log Debug
 FILE *f_freq;
@@ -16,12 +19,12 @@ FILE *f_enc;
 FILE *f_output;
 
 //Array frequency
-static int frequency[255];
+static int frequency[ARRLEN];
 
 //Array Element pointers, it will
 //contain every element with specific
 //ranges and attributes each iteration
-static Element *pointer_to_char[255];
+static Element *pointer_to_char[ARRLEN];
 
 //total encoded chars
 static int total_char = 0;
@@ -41,10 +44,10 @@ static uint32_t low = 0;
 static uint32_t high = 0x7FFFFFFF;
 
 //Buffer output to file
-static char buffer[9]="33333333";
+static char buffer[9] = "33333333";
 
 //Count char to EOF
-static int counter_to_EOF=0;
+static int counter_to_EOF = 0;
 
 /**
  *
@@ -59,32 +62,28 @@ int get_total_char() {
  * writing 8 bit from buffer
  * @param bit_to_out
  */
-void write_8_bit_to_out(char *bit_to_out){
-    int buf_index=0;
+void write_8_bit_to_out(char *bit_to_out) {
+    int buf_index = 0;
     printf("To write in %s\n", bit_to_out);
     for (int i = 0; i < strlen(bit_to_out); i++) {
-        if(buffer[i]!='3' && buffer[i]!='0' && buffer[i]!='1'){
-            printf("We have a problem HOWWW????");
-        }
-        if(buf_index==8){
+        if (buf_index == 8) {
             //printf("BUFFER write: %s", buffer);
             //buf char to buf int
-            long l_bin=binary_to_int(buffer, 32);
+            long l_bin = binary_to_int(buffer, 32);
             //printf("%li ", l_bin);
             fwrite(&l_bin, 1, 1, f_output);
-            char ptr[strlen(bit_to_out)-i];
+            char ptr[strlen(bit_to_out) - i];
             //strncpy(ptr, &bit_to_out[i], sizeof(bit_to_out)-i);
-            strncpy(ptr, &bit_to_out[i], strlen(bit_to_out)-i);
+            strncpy(ptr, &bit_to_out[i], strlen(bit_to_out) - i + 1);
             strcpy(buffer, "33333333");
             write_8_bit_to_out(ptr);
             return;
         }
 
-        if(buffer[buf_index]=='3'){
-            buffer[buf_index]=bit_to_out[i];
+        if (buffer[buf_index] == '3') {
+            buffer[buf_index] = bit_to_out[i];
             buf_index++;
-        }
-        else{
+        } else {
             buf_index++;
             i--;
         }
@@ -96,19 +95,19 @@ void write_8_bit_to_out(char *bit_to_out){
     printf("\n------\n");
 }
 
-void ac_end(){
+void ac_end() {
     printf("\nEND\n");
     //fill buffer with low val
     printf("%s ", int_to_binary(low, 32));
     write_8_bit_to_out(int_to_binary(low, 32));
     //out last bit in buffer
-    for(int i=0; i<8; i++){
-        if(!(buffer[i]!='3')){
-            buffer[i]='0';
+    for (int i = 0; i < 8; i++) {
+        if (!(buffer[i] != '3')) {
+            buffer[i] = '0';
         }
     }
     printf("Last writing---\n");
-    long l_bin=binary_to_int(buffer, 32);
+    long l_bin = binary_to_int(buffer, 32);
     fwrite(&l_bin, 1, 1, f_output);
     //long intval=8;
     //fwrite(&intval, 1, 1, f_output);
@@ -143,7 +142,7 @@ void ac_ranges(unsigned char next_char, int i) {
     old += get_element_range(p);
 
 #if DEBUG_FILE_PRINT
-    print_element_file(p, f_enc);
+    //print_element_file(p, f_enc);
 #endif
 
     //writing output file FINAL output
@@ -169,7 +168,7 @@ void ac_encode(unsigned char next_char) {
 
             //Binary bit that don't change this will be sent out
             //and ranges will update
-            char *bit_to_out=check_output_range(low_bin, high_bin, size);
+            char *bit_to_out = check_output_range(low_bin, high_bin, size);
 
             //every 8 bit
             write_8_bit_to_out(bit_to_out);
@@ -183,15 +182,23 @@ void ac_encode(unsigned char next_char) {
 
             fprintf(f_enc, "\nEquals bit: %s\n", bit_to_out);
 #endif
-
             //Shift
             for (int j = 0; j < strlen(bit_to_out); j++) {
-                low=low<<1;
-                high=(high<<1)|1;
+                low = low << 1;
+                high = (high << 1) | 1;
             }
 
             low_bin = int_to_binary(low, size);
             high_bin = int_to_binary(high, size);
+
+            if (high<((high+low)/2)) {
+                fprintf(f_enc, "OK");
+            }
+            else if(low>=((high+low)/2)){
+                fprintf(f_enc, "UNDERFLOW");
+                /*low = 0;
+                high = 0x7FFFFFFF;*/
+            }
 
 #if DEBUG_FILE_PRINT
             //Binary rappresentation
@@ -222,25 +229,25 @@ void ac_encode(unsigned char next_char) {
     fprintf(f_enc, "\n=======================================\n\n");
     fprintf(f_enc, "CHAR NEXT CHAR, %c ---------------------------\n", next_char);
     fprintf(f_enc, "\nOld as low:\t%u\n\n", old);
-    if(low>high){
-        printf("We have a problem");
+    if (low > high) {
+        fprintf(f_enc, "\nwe have a problem\n");
     }
 #endif
 
     //free pointer?
-    for (int i = 0; i < 255; i++) {
+    for (int i = 0; i < ARRLEN; i++) {
         free_element(pointer_to_char[i]);
-        pointer_to_char[i]=0;
+        pointer_to_char[i] = 0;
     }
 
     //Part to re-calculate every range
-    for (int i = 0; i < 255; i++) {
+    for (int i = 0; i < ARRLEN; i++) {
         if (frequency[i] != 0) {
             ac_ranges((unsigned char) frequency[i], i);
         }
     }
     //printf("COUNTER:\t%d - %d\n", counter_to_EOF, total_char);
-    if((counter_to_EOF+1)==total_char){
+    if ((counter_to_EOF + 1) == total_char) {
         counter_to_EOF++;
         ac_encode(next_char);
 
@@ -280,6 +287,6 @@ void print_frequency() {
 #endif
 }
 
-void set_to_counter_EOF(){
+void set_to_counter_EOF() {
     counter_to_EOF++;
 }
