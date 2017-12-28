@@ -6,7 +6,7 @@
 
 // "Constructors & destructors"
 CircularBuffer *uccb_init(size_t capacity){
-    return cb_init(sizeof(unsigned char),capacity);
+    return cb_init(capacity,sizeof(unsigned char));
 }
 void uccb_free(CircularBuffer *cb){
     return cb_free(cb);

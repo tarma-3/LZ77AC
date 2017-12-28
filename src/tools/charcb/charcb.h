@@ -15,7 +15,6 @@
 CircularBuffer *uccb_init(size_t capacity);
 void uccb_free(CircularBuffer *cb);
 
-
 // Setters
 bool uccb_push(unsigned char uchar,CircularBuffer *cb);
 size_t uccb_getid(CircularBuffer *cb);
@@ -28,6 +27,5 @@ unsigned char uccb_pointed(CircularBuffer *cb);
 bool uccb_hasnext(CircularBuffer *cb);
 size_t uccb_nofchars(CircularBuffer *cb);
 
-//int uccb_errorcode(CircularBuffer *cb);
 
 #endif //LZ77AC_CHARCB_H

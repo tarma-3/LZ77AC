@@ -5,8 +5,8 @@
 #include <printf.h>
 #include "kmpsearch.h"
 int main() {
-    char P[] = "%";
-    char S[] = "%Pattern acacabacascabacacacacacabacacabacacac matching(substring search) using KMP algorithm%";
+    char P[] = "ABXABC";
+    char S[] = "ABXABXABC";
     printf("%ld", strnmatch(P, S,1));
     return 0;
 }

@@ -8,7 +8,7 @@
 #include <stdlib.h>
 #include "file.h"
 int stream_file_to(char *args,void (*output_handler)(unsigned char)){
-    // This function return 1 if the file exists
+    // This function return 1 if the _file exists
     FILE *input;
     int next_char;
     if((input = fopen(args, "r"))!=0&&((next_char = fgetc(input))>=0)) {
@@ -52,7 +52,7 @@ const char *get_filename_ext(char *filename) {
 /*int main(int args_number, char *args[]){
 
     if(!stream_file_to(args[1],print_char)){
-        // If file not exists
+        // If _file not exists
         exit(errno);
     }
 }*/

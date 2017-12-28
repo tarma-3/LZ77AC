@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "lz77/lz77.h"
+#include "./lz77/lz77.h"
 
 
 int main(int args_number, char *args[]) {
@@ -17,6 +17,9 @@ int main(int args_number, char *args[]) {
         // ac_encode(lz77_encode(args[1]));
     }
     else if(strcmp("-d",args[1])==0){
+        lz77_decode(args[2]);
+
+
         // DECOMPRESSION
         // lz77_decode(ac_decode(args[1]));
     }

@@ -7,3 +7,4 @@
 
 #endif //LZ77AC_LZ77_H
 char *lz77_encode(char args[]);
+char *lz77_decode(char args[]);

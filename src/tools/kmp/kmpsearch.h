@@ -4,7 +4,8 @@
 
 #include <strings.h>
 #include "../charcb/cb/cibuff.h"
+#include "../bytestr/bytestr.h"
 
 long strnmatch(const char *P, const char *S, size_t n);
 long strmatch(const char *P, const char *S);
-long structmatchn(char *P,CircularBuffer *cb,size_t n);
+long upmatch(ByteString *P, CircularBuffer *cb, size_t from);
