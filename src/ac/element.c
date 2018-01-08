@@ -16,11 +16,11 @@ typedef struct element {
     unsigned char c;
     uint32_t start;
     uint32_t end;
-    int frequency;
+    uint32_t frequency;
     uint32_t range;
 } Element;
 
-Element *init_element(unsigned char c, int fr) {
+Element *init_element(unsigned char c, uint32_t fr) {
     Element *el;
     el = malloc(sizeof(Element));
     el->c = c;
@@ -77,7 +77,7 @@ void set_element_points(Element *el, uint32_t start, uint32_t end) {
     el->end = end;
 }
 
-void set_element_frequency(Element *el, int frq) {
+void set_element_frequency(Element *el, uint32_t frq) {
     el->frequency = frq;
 }
 
@@ -126,4 +126,26 @@ char *check_output_range(char *low, char *high, int size) {
 long binary_to_int(char *binary, int sz) {
     long l = strtol(binary, 0, 2);
     return l;
+}
+
+char *underflow_check(char *low, char *high, int size) {
+    char *to_output = (char *) malloc(size);
+    int j = 0;
+
+    for (int i = 0; i < size; i++) {
+        if (low[i] != high[i] && (low[i]=='1' && high[i]=='0')/* || (low[i]=='0' && high[i]=='1')*/) {
+        //if(i==0){
+            to_output[j] = low[i];
+            j++;
+        } else {
+            to_output[j] = '\0';
+            return to_output;
+        }
+        /*if (i!=0) {
+            to_output[i] = low[i];
+            j++;
+        }*/
+    }
+    //to_output[j] = '\0';
+    return to_output;
 }
