@@ -19,4 +19,6 @@ void read_in_32();
 
 void set_to_counter_EOF();
 
+void init_wa();
+
 #endif //LZ77AC_AC_DECODING_H
