@@ -3,7 +3,7 @@
 //
 
 #include <printf.h>
-#include "cibuff.h"
+#include "cibuffo.h"
 #include "../charcb.h"
 
 int main() {
@@ -37,7 +37,7 @@ int main() {
     }
 
     while (cb_hasnext(cb)){
-        cb_next(&c,cb);
+        cb_next(&c, cb);
         printf("%c",c);
     }
 

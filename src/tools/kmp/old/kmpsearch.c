@@ -5,18 +5,19 @@
 #include "kmpsearch.h"
 #include "../charcb/cb/cibuff.h"
 #include "../charcb/charcb.h"
+#include "../../lz77/lz77.h"
 #include <stdlib.h>
 #include <time.h>
 
-typedef struct _prefix_arr {
+typedef struct _prefix_table {
     size_t length;
     int *T;
-} PrefixArray;
+} PrefixTable;
 
 #if DEBUG_KMP_LOG
 FILE *log_kmp;
 
-void __log_prefixtable(ByteString *P, PrefixArray *T) {
+void __log_prefixtable(ByteString *P, PrefixTable *T) {
     log_kmp = fopen("./log/log_kmp.txt", "a");
     fprintf(log_kmp, "| Pattern to match:  ");
     for (unsigned int i = 0; i < T->length; i++) {
@@ -33,9 +34,9 @@ void __log_prefixtable(ByteString *P, PrefixArray *T) {
 
 #endif
 
-PrefixArray *_ubuild_table(ByteString *P) {
-    PrefixArray *parr;
-    parr = malloc(sizeof(struct _prefix_arr));
+PrefixTable *_ubuild_table(ByteString *P) {
+    PrefixTable *parr;
+    parr = malloc(sizeof(struct _prefix_table));
     parr->length = bs_getlen(P);
     parr->T = malloc(sizeof(int) * parr->length);
     parr->T[0] = 0;
@@ -56,21 +57,21 @@ PrefixArray *_ubuild_table(ByteString *P) {
         }
     }
 #if DEBUG_KMP_LOG
-    __log_prefixtable(P, parr);
+    if (DEBUG_ENABLED) __log_prefixtable(P, parr);
 #endif
     return parr;
 }
 
-PrefixArray *_build_table(char P[]) {
+PrefixTable *_build_table(char P[]) {
     return _ubuild_table(P);
 }
 
-void _free_table(PrefixArray *parr) {
+void _free_table(PrefixTable *parr) {
     free(parr->T);
     free(parr);
 }
 
-long _core(const char P[], const char S[], PrefixArray *parr, size_t n) {
+long _core(const char P[], const char S[], PrefixTable *parr, size_t n) {
     size_t ssize = strlen(S);
     for (size_t l = 0; n < ssize;) {
         if (S[n] == P[l]) {
@@ -88,8 +89,13 @@ long _core(const char P[], const char S[], PrefixArray *parr, size_t n) {
     return -1;
 }
 
-long _core_struct(ByteString *_P_lookahe_buff, CircularBuffer *cb, PrefixArray *_T_prefixarray, size_t pattern_index) {
-    pattern_index = (size_t) _T_prefixarray->T[pattern_index];
+long _core_struct(ByteString *_P_lookahe_buff, CircularBuffer *cb, PrefixTable *_T_prefixarray, size_t pattern_index) {
+    if(DEBUG_ENABLED){
+
+    }
+    if (pattern_index != 0) {
+        pattern_index = (size_t) _T_prefixarray->T[--pattern_index];
+    }
     while (uccb_hasnext(cb)) {
         if (uccb_pointed(cb) == bs_get(_P_lookahe_buff, pattern_index)) {
             uccb_next(cb);
@@ -100,6 +106,8 @@ long _core_struct(ByteString *_P_lookahe_buff, CircularBuffer *cb, PrefixArray *
             } else uccb_next(cb);
         }
         // Raggiunta la fine del pattern, match trovato
+        int tre = _T_prefixarray->length;
+        int zero = pattern_index;
         if (pattern_index == _T_prefixarray->length) {
             if (uccb_getid(cb) == 0)
                 return (long) (uccb_nofchars(cb)) - _T_prefixarray->length;
@@ -119,7 +127,7 @@ long strnmatch(const char *P, const char *S, size_t n) {
     }
     CLEAR_LOG = 0;
 #endif
-    PrefixArray *T = _build_table(P);
+    PrefixTable *T = _build_table(P);
     long result = _core(P, S, T, n);
     _free_table(T);
     return result;
@@ -145,33 +153,37 @@ long strmatch(const char *P, const char *S) {
  */
 long upmatch(ByteString *P, CircularBuffer *cb, size_t from) {
 #if DEBUG_KMP_LOG
-    if (CLEAR_LOG) {
-        log_kmp = fopen("./log/log_kmp.txt", "wb+");
-        char buffer[26];
-        {
-            time_t timer;
-            time(&timer);
-            struct tm *tm_info = localtime(&timer);
-            strftime(buffer, 26, "\n %Y-%m-%d [%H:%M]", tm_info);
+    if (DEBUG_ENABLED) {
+        if (CLEAR_LOG) {
+            log_kmp = fopen("./log/log_kmp.txt", "wb+");
+            char buffer[26];
+            {
+                time_t timer;
+                time(&timer);
+                struct tm *tm_info = localtime(&timer);
+                strftime(buffer, 26, "\n %Y-%m-%d [%H:%M]", tm_info);
+            }
+            fprintf(log_kmp, "%s - INIT FROM pm_ntof()\n\n", buffer);
+            fclose(log_kmp);
         }
-        fprintf(log_kmp, "%s - INIT FROM pm_ntof()\n\n", buffer);
+        CLEAR_LOG = 0;
+        log_kmp = fopen("./log/log_kmp.txt", "a");
+        char t[bs_capacity(P)];
+        fprintf(log_kmp, "[CALLED] pm_ntof(%s,cb,%d)\n", bs_string(P, t), (int) from);
         fclose(log_kmp);
     }
-    CLEAR_LOG = 0;
-    log_kmp = fopen("./log/log_kmp.txt", "a");
-    char t[bs_capacity(P)];
-    fprintf(log_kmp, "[CALLED] pm_ntof(%s,cb,%d)\n", bs_string(P, t), (int) from);
-    fclose(log_kmp);
 #endif
 
-    PrefixArray *T = _ubuild_table(P);
+    PrefixTable *T = _ubuild_table(P);
     long result = _core_struct(P, cb, T, from);
     _free_table(T);
 
 #if DEBUG_KMP_LOG
-    log_kmp = fopen("./log/log_kmp.txt", "a");
-    fprintf(log_kmp, "[RETURN] %ld\n\n", result);
-    fclose(log_kmp);
+    if (DEBUG_ENABLED) {
+        log_kmp = fopen("./log/log_kmp.txt", "a");
+        fprintf(log_kmp, "[RETURN] %ld\n\n", result);
+        fclose(log_kmp);
+    }
 #endif
     return result;
 }

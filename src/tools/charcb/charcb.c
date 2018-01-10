@@ -27,7 +27,7 @@ unsigned char uccb_read(size_t id, CircularBuffer *cb){
 }
 unsigned char uccb_next(CircularBuffer *cb){
     unsigned char t;
-    cb_next(&t,cb);
+    cb_next(&t, cb);
     return t;
 }
 unsigned char uccb_pointed(CircularBuffer *cb){

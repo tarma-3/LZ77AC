@@ -16,7 +16,7 @@ void _outofboundexception() {
     exit(0);
 }
 
-ByteString *ba_init(size_t capacity) {
+ByteString *bs_init(size_t capacity) {
     ByteString *b = malloc(sizeof(ByteString));
     b->buffer = malloc(sizeof(unsigned char) * capacity);
     b->capacity = capacity;
@@ -28,6 +28,15 @@ void bs_set(ByteString *by, size_t position, byte newbyte) {
     if (position < by->capacity) {
         by->buffer[position] = newbyte;
         if (position + 1 > by->len) by->len = position + 1;
+        return;
+    }
+    _outofboundexception();
+}
+
+void bs_add(ByteString *by, byte newbyte) {
+    if (by->len < by->capacity) {
+        by->buffer[by->len] = newbyte;
+        by->len = by->len + 1;
         return;
     }
     _outofboundexception();

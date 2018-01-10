@@ -19,8 +19,8 @@ int stream_file_to(char *args,void (*output_handler)(unsigned char)){
         fclose(input);
         return 1;
     }
-    fprintf(stderr,"Error on 2nd parameter '%s': %s\n",args,strerror(errno));
-    return 0;
+    fprintf(stderr,"Error on 2nd parameter '%s': %s\n - file.c: stream_file_to\n",args,strerror(errno));
+    exit(errno);
 }
 
 void print_char(unsigned char c){
