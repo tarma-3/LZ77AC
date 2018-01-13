@@ -27,13 +27,13 @@ static int flag_exit = 1; //boolean
 static uint32_t output = 0;
 static FILE *f_out;
 
-static uint64_t window;
-static uint32_t extra_window;
+static uint64_t window = 0;
+static uint32_t extra_window = 0;
 static int fill_extra = 0;
 
 //shift
 static int buffer_full = 0;
-static int shift = 9;
+static int shift = ARRLEN * 4 + 13;//13;//9;
 static int pending_bits = 0;
 
 void _read_in_32(uint32_t *win);
@@ -44,48 +44,70 @@ void _read_endian_32(uint32_t *win) {
 
 void check_extra() {
     if (fill_extra == 8) {
-        fprintf(dec_ranges, "\n\nFULL BUFFER shift: %d\n", shift);
         fseek(f_out, shift, SEEK_SET);
         shift++;
         _read_in_32(&extra_window);
-        //_read_endian_32(&extra_window);
-        fprintf(dec_ranges, "\nNEW EXTRA WINDOW: %s - %X\n\n", int_to_binary(extra_window, 32), extra_window);
         fill_extra = 0;
     }
 }
 
 void shift_window_out() {
-    fprintf(dec_ranges, "1 -Window before %s %s\n", int_to_binary(window >> 32, 32), int_to_binary(window, 32));
-    fprintf(dec_ranges, "1 -Extra before %s\n", int_to_binary(extra_window, 32));
+#if DEBUG_FILE_PRINT
+    fprintf(dec_ranges, "1 - shift\n");
+#endif
     window = window << 1ULL | 0;
     //extra_window = extra_window << 1 | 0;
     uint32_t tmp_extra = extra_window & 0x80000000U;
     fill_extra++;
-    //window = window | (uint64_t)(extra_window>>64);
-    //window = window | ((uint64_t) (tmp_extra) >> 32ULL);
-    window=window|(uint64_t) tmp_extra>>31;
+    window = window | (uint64_t) tmp_extra >> 31;
     extra_window = extra_window << 1 | 0;
-
-    fprintf(dec_ranges, "1 - shift out -Window %s\n", int_to_binary(window >> 32, 32));
-    fprintf(dec_ranges, "1 - shift out -Extra After %s\n\n\n", int_to_binary(extra_window, 32));
 
     check_extra();
 }
 
 void init_wa() {
+    //prepare files
+    f_out = fopen("ac_output", "rb");
+    dec_output = fopen("dec_output.txt", "w");
+#if DEBUG_FILE_PRINT
+    dec_ranges = fopen("dec_ranges.txt", "w");
+#endif
+    //read total char
+    fread(&total_char, 1, sizeof(uint32_t), f_out);
+    printf("Char: %u", total_char);
+
+    //read array ARRLEN
+    for (int i = 0; i < ARRLEN; ++i) {
+        fread(&frequency[i], sizeof(uint32_t), 1, f_out);
+        printf("%d\n", frequency[i]);
+    }
+
     //window ready loaded 64 bit
     uint32_t win1, win2;
     _read_in_32(&win1);
-    fprintf(dec_ranges, "LONG init high %d %s\n", win1, int_to_binary(win1, 32));
     _read_in_32(&win2);
-    fprintf(dec_ranges, "LONG init high %d %s\n", win2, int_to_binary(win2, 32));
 
-    //window = ((uint64_t) win1 << 32) | ((uint64_t) win2 & 0xFFFFFFFU);
+#if DEBUG_FILE_PRINT
+    fprintf(dec_ranges, "win 1: %s", int_to_binary(win1, 32));
+    fprintf(dec_ranges, "win 2: %s", int_to_binary(win2, 32));
+#endif
+
     window = (uint64_t) win1 << 32 | win2;
+
+    fseek(f_out, 0, SEEK_END);
+    unsigned long fs = ftell(f_out);
+    rewind(f_out);
+    //fseek(f_out, 8, SEEK_SET);
+    //char
+    //fseek(f_out, 12, SEEK_SET);
+    //array
+    fseek(f_out, ARRLEN * 4 + 12, SEEK_SET);
+#if DEBUG_FILE_PRINT
+    fprintf(dec_ranges, "File read: %d\n", fs);
+#endif
 
     //load added window of 32 bit
     _read_in_32(&extra_window);
-    fprintf(dec_ranges, "EXTRA %s\n", int_to_binary(extra_window, 32));
 }
 
 void _read_in_32(uint32_t *win) {
@@ -119,7 +141,6 @@ void read_in_32() {
 }
 
 void adjust_range(int underflow_bit) {
-    fprintf(dec_ranges, "adjust ranges, underflow bit +%d", underflow_bit);
     low = (low << underflow_bit);
     low &= ~(1 << 31);
     for (int j = 0; j < underflow_bit; j++) {
@@ -132,7 +153,6 @@ void check_full_buffer() {
     if (buffer_full == 8) {
         fseek(f_out, shift, SEEK_SET);
         read_in_32();
-        fprintf(dec_ranges, "read_in_32() %X - %s\n", output, int_to_binary(output, 32));
         buffer_full = 0;
         shift++;
     }
@@ -140,86 +160,20 @@ void check_full_buffer() {
 
 void adjust_output_range() {
     for (int i = 0; i < pending_bits; i++) {
-        //window<<=1;
-        fprintf(dec_ranges, "2 -Window before %s %s\n", int_to_binary(window >> 32, 32), int_to_binary(window, 32));
-        fprintf(dec_ranges, "2 -Extra before %s\n", int_to_binary(extra_window, 32));
+#if DEBUG_FILE_PRINT
+        fprintf(dec_ranges, "2 - pending shift\n");
+#endif
         uint64_t upper = window & 0x8000000000000000UL;
         uint64_t lower = window & 0x3FFFFFFFFFFFFFFFUL;
-        //extra_window=(extra_window&0x80000000)>>31;
-        fprintf(dec_ranges, "2 -up - low %s %s\n", int_to_binary(upper >> 32, 32), int_to_binary(lower >> 32, 32));
-
         uint32_t extra_low = extra_window & 0x80000000;
-        fprintf(dec_ranges, "2 -extra low var %s\n", int_to_binary(((extra_low)) >> 31, 32));
         extra_window = extra_window << 1;
         fill_extra++;
 
         window = (upper) | (lower << 1ULL);
         window = window | ((uint64_t) (extra_low)) >> 31ULL;
-        //window = (upper) | (((lower << 1)) | ((uint64_t) (extra_low)) >> 31);
-        //window = window|extra_window;
-
-        //CHECK
-        //torna indetro 8 byte
-        /*fseek(f_out, -1, SEEK_CUR);
-        _read_in_32(&extra_window);
-        //torna indietro 8 byte
-        fseek(f_out, -8, SEEK_CUR);*/
-
-        fprintf(dec_ranges, "2 -Window %s\n", int_to_binary(window >> 32, 32));
-        fprintf(dec_ranges, "2 -Extra After %s\n\n\n", int_to_binary(extra_window, 32));
-
 
         check_extra();
     }
-    /*ADDED AFTER I think it used to work :)
-     * for (int k = 0; k < pending_bits; k++) {
-        uint32_t upper = output & 0x80000000;
-
-        char *bits_mask = malloc(sizeof(char) * (32));
-        bits_mask[0] = '0';
-        bits_mask[1] = '0';
-        int j = pending_bits;
-        for (j = 1; j < 31; j++) {
-            bits_mask[j] = '1';
-        }
-        bits_mask[j] = '\0';
-        int mask = binary_to_int(bits_mask, 32);
-        fprintf(dec_ranges, "\nthe MASK index %d: %s\n\n", k, int_to_binary(mask, 32));
-        uint32_t lower = output & mask;
-        fprintf(dec_ranges, "\noutput MASK & %d: %s\n\n", k, int_to_binary(output & mask, 32));
-
-        output = (upper) | (lower << 1);
-        fprintf(dec_ranges, "\noutput %d: %s\n\n", k, int_to_binary(output, 32));
-        buffer_full++;
-        check_full_buffer();
-    }
-     */
-    /*uint32_t upper = output & 0x80000000;
-fprintf(dec_ranges, "\nfirst bit&0: %s\n\n", int_to_binary(upper, 32));
-
-char *bits_mask = malloc(sizeof(char) * (32));
-bits_mask[0] = '0';
-int j;
-for (j = 1; j <= pending_bits; j++) {
-    bits_mask[j] = '0';
-}
-for (j = pending_bits; j < 31; j++) {
-    bits_mask[j] = '1';
-}
-bits_mask[j] = '\0';
-int mask = binary_to_int(bits_mask, 32);
-uint32_t lower = output & mask;
-
-fprintf(dec_ranges, "\nMASK: %s\n\n", int_to_binary(mask, 32));
-fprintf(dec_ranges, "\nlower shift bit&0: %s\n\n",
-        int_to_binary((upper) | (lower << pending_bits), 32));
-
-output = (upper) | (lower << pending_bits);
-fprintf(dec_ranges, "\noutput bit&0: %s %u\n\n", int_to_binary(output, 32), output);
-for (int k = 0; k < pending_bits; ++k) {
-    buffer_full++;
-    check_full_buffer();
-}*/
 }
 
 //https://stackoverflow.com/questions/199333/how-to-detect-integer-overflow
@@ -251,17 +205,15 @@ void dac_ranges(unsigned char next_char, int i) {
         old += get_element_range(p);
 
 #if DEBUG_FILE_PRINT
-      //  print_element_file(p, dec_ranges);
+        //print_element_file(p, dec_ranges);
 #endif
         if (is_in_range(p, window >> 32)) {
-            //fount it and win
-            fprintf(dec_ranges, "0 - Window %s %s \t %X %X\n", int_to_binary(window >> 32, 32), int_to_binary(window, 32),
-                    (uint32_t)(window >> 32), (uint32_t)(window));
             //this char as been found
             char c = get_element_char(p);
             fwrite(&c, 1, 1, dec_output);
-
+#if DEBUG_FILE_PRINT
             fprintf(dec_ranges, "The char is: %c\n\n", c);
+#endif
             //element has high and low
             low = get_element_start(p);
             high = get_element_end(p);
@@ -273,22 +225,25 @@ void dac_ranges(unsigned char next_char, int i) {
             char *real_bit_to_out = check_output_range(low_bin, high_bin, size);
 
             if (strlen(real_bit_to_out) != 0) {
-                //adjust_output_range();
                 pending_bits = 0;
             }
 
             if (strlen(real_bit_to_out) == 0) {
                 //only increment pending go on
                 //adjust range no shift
-                fprintf(dec_ranges, "help output=%s\n", int_to_binary(window >> 32, 32));
+#if DEBUG_FILE_PRINT
+                fprintf(dec_ranges, "help output: %s\n", int_to_binary(window >> 32, 32));
+#endif
                 char *underflow = underflow_check(int_to_binary(low << 1, 32), int_to_binary(high << 1, 32), 32);
                 int underflow_bit = strlen(underflow);
                 pending_bits += underflow_bit;
 
                 adjust_output_range();
                 adjust_range(underflow_bit);
-            }
-            else {
+
+                //free
+                free(underflow);
+            } else {
                 //Shift calcolo pending
                 uint32_t shifted_low = low;
                 uint32_t shifted_high = high;
@@ -302,6 +257,8 @@ void dac_ranges(unsigned char next_char, int i) {
                 int underflow_bit = strlen(underflow);
                 pending_bits += underflow_bit;
 
+                //free
+                free(underflow);
 
                 //Shift
                 for (int j = 0; j < strlen(real_bit_to_out); j++) {
@@ -326,8 +283,14 @@ void dac_ranges(unsigned char next_char, int i) {
             fprintf(dec_ranges, "\nLow - High:\t%u - %u\n\n", low, high);
             fprintf(dec_ranges, "\nPending: %d\n\n", pending_bits);
             fprintf(dec_ranges, "\nvar buffer_full:\t%d\n", fill_extra);
-            fprintf(dec_ranges, "\nOutput:\t%u - %s%s\n\n", window >> 32, int_to_binary(window >> 32, 32), int_to_binary(window,32));
+            fprintf(dec_ranges, "\nOutput:\t%u - %s%s\n\n", window >> 32, int_to_binary(window >> 32, 32),
+                    int_to_binary(window, 32));
 #endif
+            //free
+            free(low_bin);
+            free(high_bin);
+            free(real_bit_to_out);
+
             flag_exit = 0;
             return;
         }
@@ -356,11 +319,11 @@ void set_total_char(int t_ch) {
 }
 
 void set_frequency(int *frq, int len) {
-    f_out = fopen("ac_output", "rb");
-    dec_output = fopen("dec_output.txt", "w");
-#if DEBUG_FILE_PRINT
-    dec_ranges = fopen("dec_ranges.txt", "w");
-#endif
+    /*f_out = fopen("ac_output", "rb");
+     dec_output = fopen("dec_output.txt", "w");
+ #if DEBUG_FILE_PRINT
+     dec_ranges = fopen("dec_ranges.txt", "w");
+ #endif*/
     for (int i = 0; i < ARRLEN; i++) {
         frequency[i] = frq[i];
     }

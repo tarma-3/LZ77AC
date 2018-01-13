@@ -67,16 +67,12 @@ int get_total_char() {
  */
 void write_8_bit_to_out(char *bit_to_out) {
     int buf_index = 0;
-    printf("To write in %s\n", bit_to_out);
     for (int i = 0; i < strlen(bit_to_out); i++) {
         if (buf_index == 8) {
-            //printf("BUFFER write: %s", buffer);
             //buf char to buf int
             long l_bin = binary_to_int(buffer, 32);
-            //printf("%li ", l_bin);
             fwrite(&l_bin, 1, 1, f_output);
             char ptr[strlen(bit_to_out) - i];
-            //strncpy(ptr, &bit_to_out[i], sizeof(bit_to_out)-i);
             strncpy(ptr, &bit_to_out[i], strlen(bit_to_out) - i + 1);
             strcpy(buffer, "33333333");
             write_8_bit_to_out(ptr);
@@ -92,14 +88,22 @@ void write_8_bit_to_out(char *bit_to_out) {
         }
 
     }
-    for (int i = 0; i < 8; i++) {
-        printf("%c ", buffer[i]);
-    }
-    printf("\n------\n");
 }
 
 void ac_end() {
     printf("\nEND\n");
+    //check pending
+    //TODO
+
+    //fprintf(f_enc, "Pending: %d\n", pending_bits);
+
+    /*low = (low << pending_bits);
+    low &= ~(1 << 31);
+    for (int j = 0; j < pending_bits; j++) {
+        high = (high << 1 | 1);
+    }
+    high = high | (1 << 31);*/
+
     //fill buffer with low val
     printf("%s ", int_to_binary(low, 32));
     write_8_bit_to_out(int_to_binary(low, 32));
@@ -148,17 +152,6 @@ void ac_ranges(unsigned char next_char, int i) {
     pointer_to_char[n] = p;
     n++;
 
-    //Calculating and updating element ranges
-    //fprintf(f_enc, "\nhigh %u", high);
-    //funzionava
-    /*if(calc) {
-        set_element_range(p, get_element_frequency(p) * (high - low) / total_char);
-    }
-    else{
-        set_element_range(p, get_element_frequency(p) * (high - low) / total_char);
-        calc=1;
-    }*/
-
     //Overflow
     size_t a_bits = highestOneBitPosition(get_element_frequency(p)), b_bits = highestOneBitPosition((high - low));
     if (a_bits + b_bits <= 32) {
@@ -166,9 +159,6 @@ void ac_ranges(unsigned char next_char, int i) {
     } else {
         set_element_range(p, (high - low) / total_char * get_element_frequency(p));
     }
-
-    //fprintf(f_enc, "\tVAL %u\n", (high-low)/total_char*get_element_frequency(p));
-    //printf("%d\n", get_element_range(p));
     set_element_points(p, old, old + get_element_range(p));
     old += get_element_range(p);
 
@@ -190,36 +180,14 @@ void ac_encode(unsigned char next_char) {
     for (int i = 0; i < n; i++) {
         if (get_element_char(pointer_to_char[i]) == next_char) {
 
+#if DEBUG_FILE_PRINT
             fprintf(f_enc, "Encoding: %c\n", next_char);
-            //add
-            //uint32_t half = (low + high) / 2;
-            //fprintf(f_enc, "Half: %s - %d\n", int_to_binary(half, 32), half);
-
-            //????
-
+#endif
             low = get_element_start(pointer_to_char[i]);
             high = get_element_end(pointer_to_char[i]);
 
-            //qui
-
             int size = 32;
 
-            //char *low_bin = int_to_binary(low, size);
-            //char *high_bin = int_to_binary(high, size);
-
-            /*if (high < half) {
-                fprintf(f_enc, "\n*******Write in 0 - %s\n", int_to_binary(high, 32));
-                char *z = "0";
-                write_8_bit_to_out(z);
-                low = low << 1;
-                high = high << 1;
-            } else if (low >= half) {
-                fprintf(f_enc, "\n*******Write in 1 - %s\n", int_to_binary(high, 32));
-                char *o = "1";
-                write_8_bit_to_out(o);
-                low = (low - half) << 1;
-                high = (high - half) << 1;
-            }*/
             //Update
             char *low_bin;
             char *high_bin;
@@ -237,7 +205,7 @@ void ac_encode(unsigned char next_char) {
             char *real_bit_to_out = check_output_range(low_bin, high_bin, size);
 
             //every 8 bit
-            if(pending_bits==0){
+            if (pending_bits == 0) {
                 write_8_bit_to_out(real_bit_to_out);
             }
 
@@ -245,37 +213,43 @@ void ac_encode(unsigned char next_char) {
             high_bin = int_to_binary(high, size);
 
             char *bit_to_out = check_output_range(low_bin, high_bin, size);
-            if(strlen(bit_to_out)==0){
+            if (strlen(bit_to_out) == 0) {
+#if DEBUG_FILE_PRINT
                 fprintf(f_enc, "help");
+#endif
                 //no output
                 //increment pending
-            }
-            else {
-
-                /*if(strlen(bit_to_out)!=0){
-                    write_8_bit_to_out(real_bit_to_out);
-                }*/
-
+            } else {
+#if DEBUG_FILE_PRINT
                 fprintf(f_enc, "\nEquals bit: ");
+#endif
 
                 if (pending_bits != 0) {
                     char *o = "1";
                     char *z = "0";
                     if (bit_to_out[0] == '0') {
                         //converge to low
+#if DEBUG_FILE_PRINT
                         fprintf(f_enc, "0");
+#endif
                         write_8_bit_to_out(z);
                         for (int k = 0; k < pending_bits; k++) {
                             char *o = "1";
+#if DEBUG_FILE_PRINT
                             fprintf(f_enc, "%s", o);
+#endif
                             write_8_bit_to_out(o);
                         }
                     } else {
                         //converge to high
+#if DEBUG_FILE_PRINT
                         fprintf(f_enc, "1");
+#endif
                         write_8_bit_to_out(o);
                         for (int k = 0; k < pending_bits; k++) {
+#if DEBUG_FILE_PRINT
                             fprintf(f_enc, "%s", z);
+#endif
                             write_8_bit_to_out(z);
                         }
                     }
@@ -283,84 +257,24 @@ void ac_encode(unsigned char next_char) {
                     //write_8_bit_to_out(bit_to_out);
                     pending_bits = 0;
                 }
-
+#if DEBUG_FILE_PRINT
                 fprintf(f_enc, "%s", real_bit_to_out);
+#endif
             }
-            //fwrite(buffer, 8, 1, f_output);
-            //fprintf(f_output, bit_to_out);
 
 #if DEBUG_FILE_PRINT
             //Binary rappresentation
             fprintf(f_enc, "\nBinary rappresentation\n START %s\n END   %s\n\n", low_bin,
                     high_bin);
 #endif
-            //if (low < half && high > half) {
-            /*fprintf(f_enc, "\n%s - %s\n", int_to_binary(low & 0x80000000, 32), int_to_binary(high & 0x80000000, 32));
-            if ((low & 0x80000000) != (high & 0x80000000)) {
-                fprintf(f_enc, "\nMiddle\n");
-                char *underflow = underflow_check(int_to_binary(low << 1, 32), int_to_binary(high << 1, 32), 32);
-                uint32_t underflow_bit = strlen(underflow);
-                fprintf(f_enc, "\nUnderflow bit: %s %d\n\n", underflow, underflow_bit);*/
-
-            /*char *o="1";
-            char *z="0";
-
-            write_8_bit_to_out(z);
-            write_8_bit_to_out(o);*/
-
-            //calc = 0;
-
-            //CLR buffer
-            /*fprintf(f_enc, "\nBuffer CLR: %s\n\n", buffer);
-            for (int j = 0; j < 8; j++) {
-                if (!(buffer[j] != '3')) {
-                    buffer[j] = '0';
-                }
-            }
-            printf("CLR BUF---\n");
-            long l_bin = binary_to_int(buffer, 32);
-            fwrite(&l_bin, 1, 1, f_output);*/
-
-            /*pending_bits+=underflow_bit;
-            //write_8_bit_to_out(int_to_binary(low, 32));
-
-            low = (low << underflow_bit);
-            low &= ~(1 << 31);
-            for (int j = 0; j < underflow_bit; j++) {
-                high = (high << 1 | 1);
-            }
-            high = high | (1 << 31);*/
-            //}
-
-            /*if(low>=0x7FFFFFFF/2){
-                printf("top half");
-            }*/
-
-            /*
-             * WORK
-             *
-             * if (low < half && high > half) {
-                fprintf(f_enc, "\nMiddle\n");
-                char *underflow = underflow_check(int_to_binary(low << 1, 32), int_to_binary(high << 1, 32), 32);
-                int underflow_bit = strlen(underflow);
-                fprintf(f_enc, "\nUnderflow bit: %s %d\n\n", underflow, underflow_bit);
-                low=(low<<underflow_bit);
-                low &= ~(1 << 31);
-                for (int j = 0; j < underflow_bit; ++j) {
-                    high=(high<<1|1);
-                }
-                high=high| (1 << 31);
-            }*/
-            //??SDFsdf??
 
             //Shift
             for (int j = 0; j < strlen(bit_to_out); j++) {
                 low = low << 1;
                 high = (high << 1) | 1;
-                //write_8_bit_to_out(pending_bits);
             }
             //aggiunto if
-            if(strlen(bit_to_out)!=0) {
+            if (strlen(bit_to_out) != 0) {
                 if (pending_bits != 0) {
                     low = low << 1;
                     high = (high << 1) | 1;
@@ -370,7 +284,6 @@ void ac_encode(unsigned char next_char) {
             char *underflow = underflow_check(int_to_binary(low << 1, 32), int_to_binary(high << 1, 32), 32);
             uint32_t underflow_bit = strlen(underflow);
             pending_bits += underflow_bit;
-            //write_8_bit_to_out(int_to_binary(low, 32));
 
             low = (low << underflow_bit);
             low &= ~(1 << 31);
@@ -378,67 +291,6 @@ void ac_encode(unsigned char next_char) {
                 high = (high << 1 | 1);
             }
             high = high | (1 << 31);
-
-            /*if(strlen(bit_to_out)!=0){
-                if(pending_bits!=0){
-                    fprintf(f_enc, "\nSHIFT IN Underflow, write to out: ");
-                    if(bit_to_out[0]=='0'){
-                        //converge to low
-                        for(int k=0; k<pending_bits; k++){
-                            char *o="1";
-                            printf("h1 ");
-                            fprintf(f_enc, "%s", o);
-                            write_8_bit_to_out(o);
-                        }
-                    }
-                    else{
-                        //converge to high
-                        for(int k=0; k<pending_bits; k++){
-                            char *z="0";
-                            printf("h0 ");
-                            fprintf(f_enc, "%s", z);
-                            write_8_bit_to_out(z);
-                        }
-                    }
-                    pending_bits=0;
-                }
-            }*/
-
-            /*
-            //if(low<half && high>half){
-                //Write out all
-                //restart ranges
-                fprintf(f_enc, "UNDERFLOW");
-                uint32_t res=low;
-                //fwrite(&res, 1, 1, f_output);
-                //clr buf
-                //strcpy(buffer, "33333333");
-                low = 0;
-                high = 0x7FFFFFFF;
-            }*/
-
-            /*
-             *
-             *
-             *
-             *
-             *
-             * WORK
-             */
-            /*
-            //add
-            uint32_t oldHigh=high;
-            uint32_t oldLow=low;
-            uint32_t half=(oldHigh+oldLow)/2;
-            fprintf(f_enc, "Half: %d - %s\n", half, int_to_binary(half, 32));
-            if (high>((oldHigh+oldLow)/2) && low<((oldHigh+oldLow)/2)) {
-                fprintf(f_enc, "UNDERFLOW");
-            }
-            else if(low>=((oldHigh+oldLow)/2)){
-
-                low = 0;
-                high = 0x7FFFFFFF;
-            }*/
 
             low_bin = int_to_binary(low, size);
             high_bin = int_to_binary(high, size);
@@ -450,16 +302,12 @@ void ac_encode(unsigned char next_char) {
             fprintf(f_enc, "\nPending: %d\n\n", pending_bits);
             fprintf(f_enc, "\n--------------------------------------------------------\n");
 #endif
-            //printf("COUNTER:\t%d - %d\n", counter_to_EOF, total_char);
-            /*if((counter_to_EOF+1)==total_char){
-                fprintf(f_enc, "END WRITE");
-                //ac_end();
-            }*/
-            //counter_to_EOF++;
 
             //free low and high pointer
             free(low_bin);
             free(high_bin);
+            free(real_bit_to_out);
+            free(underflow);
         }
     }
 
@@ -486,15 +334,15 @@ void ac_encode(unsigned char next_char) {
         }
     }
 
-    //printf("COUNTER:\t%d - %d\n", counter_to_EOF, total_char);
     if ((counter_to_EOF + 1) == total_char) {
         counter_to_EOF++;
         ac_encode(next_char);
 
+#if DEBUG_FILE_PRINT
         fprintf(f_enc, "END WRITE");
         fprintf(f_enc, "\nBinary rappresentation\n START %s\n END   %s\n\n", int_to_binary(low, 32),
                 int_to_binary(high, 32));
-
+#endif
         ac_end();
     }
     counter_to_EOF++;
@@ -517,6 +365,12 @@ void build_frequency(unsigned char next_char) {
  */
 void print_frequency() {
     f_output = fopen("ac_output", "wb");
+    printf("Char: %d", total_char);
+    //char sul file
+    fwrite(&total_char, 1, sizeof(uint32_t), f_output);
+
+    //array frequenze file
+    fwrite(frequency, sizeof(uint32_t), ARRLEN, f_output);
 #if DEBUG_FILE_PRINT
     f_freq = fopen("f_freq.txt", "w+");
     f_enc = fopen("ac_ranges.txt", "w+");
