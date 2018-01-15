@@ -67,7 +67,7 @@ int main(int args_number, char *args[]) {
         //set_frequency(get_frequency(), 256);
         init_wa();
 
-        stream_array_to(get_frequency(), dac_ranges);
+        //stream_array_to(get_frequency(), dac_ranges);
         ac_decode();
         //read_output();
 

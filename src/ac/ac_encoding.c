@@ -91,7 +91,6 @@ void write_8_bit_to_out(char *bit_to_out) {
 }
 
 void ac_end() {
-    printf("\nEND\n");
     //check pending
     //TODO
 
@@ -105,7 +104,6 @@ void ac_end() {
     high = high | (1 << 31);*/
 
     //fill buffer with low val
-    printf("%s ", int_to_binary(low, 32));
     write_8_bit_to_out(int_to_binary(low, 32));
     //out last bit in buffer
     for (int i = 0; i < 8; i++) {
@@ -199,7 +197,6 @@ void ac_encode(unsigned char next_char) {
                 high_bin = int_to_binary(high, size);
             }
 
-
             //Binary bit that don't change this will be sent out
             //and ranges will update
             char *real_bit_to_out = check_output_range(low_bin, high_bin, size);
@@ -208,6 +205,10 @@ void ac_encode(unsigned char next_char) {
             if (pending_bits == 0) {
                 write_8_bit_to_out(real_bit_to_out);
             }
+
+            //free
+            free(low_bin);
+            free(high_bin);
 
             low_bin = int_to_binary(low, size);
             high_bin = int_to_binary(high, size);
@@ -292,6 +293,10 @@ void ac_encode(unsigned char next_char) {
             }
             high = high | (1 << 31);
 
+            //free
+            free(low_bin);
+            free(high_bin);
+
             low_bin = int_to_binary(low, size);
             high_bin = int_to_binary(high, size);
 #if DEBUG_FILE_PRINT
@@ -365,7 +370,6 @@ void build_frequency(unsigned char next_char) {
  */
 void print_frequency() {
     f_output = fopen("ac_output", "wb");
-    printf("Char: %d", total_char);
     //char sul file
     fwrite(&total_char, 1, sizeof(uint32_t), f_output);
 

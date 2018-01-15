@@ -74,12 +74,10 @@ void init_wa() {
 #endif
     //read total char
     fread(&total_char, 1, sizeof(uint32_t), f_out);
-    printf("Char: %u", total_char);
 
     //read array ARRLEN
     for (int i = 0; i < ARRLEN; ++i) {
         fread(&frequency[i], sizeof(uint32_t), 1, f_out);
-        printf("%d\n", frequency[i]);
     }
 
     //window ready loaded 64 bit
@@ -97,9 +95,6 @@ void init_wa() {
     fseek(f_out, 0, SEEK_END);
     unsigned long fs = ftell(f_out);
     rewind(f_out);
-    //fseek(f_out, 8, SEEK_SET);
-    //char
-    //fseek(f_out, 12, SEEK_SET);
     //array
     fseek(f_out, ARRLEN * 4 + 12, SEEK_SET);
 #if DEBUG_FILE_PRINT
@@ -158,8 +153,8 @@ void check_full_buffer() {
     }
 }
 
-void adjust_output_range() {
-    for (int i = 0; i < pending_bits; i++) {
+void adjust_output_range(int bits) {
+    for (int i = 0; i < bits; i++) {
 #if DEBUG_FILE_PRINT
         fprintf(dec_ranges, "2 - pending shift\n");
 #endif
@@ -238,7 +233,7 @@ void dac_ranges(unsigned char next_char, int i) {
                 int underflow_bit = strlen(underflow);
                 pending_bits += underflow_bit;
 
-                adjust_output_range();
+                adjust_output_range(underflow_bit);
                 adjust_range(underflow_bit);
 
                 //free
@@ -268,11 +263,14 @@ void dac_ranges(unsigned char next_char, int i) {
                 }
 
                 //adjust
-                adjust_output_range();
+                adjust_output_range(pending_bits);
                 adjust_range(underflow_bit);
                 pending_bits = 0;
             }
 
+            //free
+            free(low_bin);
+            free(high_bin);
 
             //update to print
             low_bin = int_to_binary(low, size);
@@ -302,6 +300,12 @@ void ac_decode() {
 #if DEBUG_FILE_PRINT
         fprintf(dec_ranges, "\n=======================================\n\n");
 #endif
+
+        //free pointer
+        for (int i = 0; i < ARRLEN; i++) {
+            free_element(pointer_to_char[i]);
+            pointer_to_char[i] = 0;
+        }
         //Part to re-calculate every range
         for (int i = 0; i < ARRLEN; i++) {
             if (frequency[i] != 0) {
@@ -319,11 +323,6 @@ void set_total_char(int t_ch) {
 }
 
 void set_frequency(int *frq, int len) {
-    /*f_out = fopen("ac_output", "rb");
-     dec_output = fopen("dec_output.txt", "w");
- #if DEBUG_FILE_PRINT
-     dec_ranges = fopen("dec_ranges.txt", "w");
- #endif*/
     for (int i = 0; i < ARRLEN; i++) {
         frequency[i] = frq[i];
     }
