@@ -23,6 +23,9 @@ static ByteString *pattern;
 static size_t pattern_i = 0;
 const int NMF = -1;
 
+double kmp_match_time = 0;
+double kmp_buildtable_time = 0;
+
 typedef struct _prefix_table {
     size_t length;
     int T[MAX_MATCH];
@@ -64,6 +67,8 @@ static int j = 0;
 
 //TODO: Ricostruisce la tabella da 0. È possibile riprendere dall'ultimo carattere?
 void _kmp_updateTable() {
+    clock_t begin = clock();
+
     prefixtable.length = bs_getlen(pattern);
     prefixtable.T[0] = 0;
     while (i < prefixtable.length) {
@@ -80,6 +85,9 @@ void _kmp_updateTable() {
             }
         }
     }
+
+    clock_t end = clock();
+    kmp_buildtable_time += (double) (end - begin) / CLOCKS_PER_SEC;
 #if DEBUG_KMP_LOG
     if (DEBUG_ENABLED) __log_prefixtable(pattern, prefixtable.T, prefixtable.length);
 #endif
@@ -89,6 +97,8 @@ void _kmp_updateTable() {
 static bool consecmatch;
 
 long kmp_match(CircularBuffer *cb) {
+    clock_t begin = clock();
+
     consecmatch = true;
     while (uccb_hasnext(cb)) {
         if (uccb_pointed(cb) == bs_get(pattern, pattern_i)) {
@@ -103,9 +113,15 @@ long kmp_match(CircularBuffer *cb) {
             }
         }
         if (pattern_i == prefixtable.length) {
+            clock_t end = clock();
+
+            kmp_match_time += (double) (end - begin) / CLOCKS_PER_SEC;
             return (long) uccb_nofchars(cb) - uccb_getid(cb);
         }
     }
+
+    clock_t end = clock();
+    kmp_match_time += (double) (end - begin) / CLOCKS_PER_SEC;
     return NMF;
 }
 

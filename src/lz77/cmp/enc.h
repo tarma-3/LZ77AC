@@ -4,7 +4,11 @@
 
 #ifndef LZ77AC_ENC_H
 #define LZ77AC_ENC_H
-void initcompressor(char source[], char destination[]);
+
+void initcompressor(char ext[], char dest[]);
+
 void runcompression(unsigned char next_byte);
+
 void terminatecompression();
+
 #endif //LZ77AC_ENC_H

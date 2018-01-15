@@ -2,6 +2,7 @@
 // Created by Enrico on 28.12.17.
 //
 
+#include <time.h>
 #include "enc.h"
 #include "../../tools/charcb/cb/cibuff.h"
 #include "../../tools/bitfile/bitfilewriter.h"
@@ -39,11 +40,11 @@ const unsigned int DICTIONARY_SIZE;
 
 void _finalmatchfound();
 
-void initcompressor(char source[], char destination[]) {
+void initcompressor(char ext[], char dest[]) {
     DEBUG_ENABLED = 1;
     dictionary = uccb_init(DICTIONARY_SIZE);
     kmp_init();
-    output_file = newBitFileWriter(destination);
+    output_file = newBitFileWriter(dest);
 #if DEBUG_LZ77_LOG
     __init_cmp_log(source);
 #endif
@@ -56,17 +57,19 @@ void runcompression(unsigned char next_byte) {
     if (DEBUG_ENABLED)__log_lz77_vpassages_run_encode_CALL(next_byte); // log chiamata metodo
 #endif
     //TODO: DEBUG ONLY
-  //  if (charswritten >= 50)
-       // DEBUG_ENABLED = 1;
-   // if (charswritten >= 50 + 50)
-       // exit(0);
+    //  if (charswritten >= 50)
+    // DEBUG_ENABLED = 1;
+    // if (charswritten >= 50 + 50)
+    // exit(0);
     charswritten++;
     //END OF DEBUG
 
     lastwasfinalmatch = false;
 
     long tmp_dm_id;
+
     kmp_addc(next_byte);
+
     //TODO: EXPERIMENTAL
     if (kmp_isfull()) {
         _finalmatchfound();
@@ -86,7 +89,7 @@ void _finalmatchfound() {
         write_bit(1, output_file);
         write_bits(11, (unsigned int) dictmatch_id, output_file);
         if (((kmp_patternlen() - 1) & 15) == 0) {
-            fprintf(stderr,"Wrong pattern len");
+            fprintf(stderr, "Wrong pattern len");
             exit(0);
         }
         write_bits(4, (unsigned int) kmp_patternlen() - 1, output_file);

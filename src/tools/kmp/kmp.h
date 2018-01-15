@@ -10,6 +10,9 @@
 
 typedef struct _prefix_table PrefixTable;
 extern const int NMF;
+extern double kmp_match_time;
+extern double kmp_buildtable_time;
+
 void kmp_init();
 void kmp_reset();
 
