@@ -5,8 +5,8 @@
 #ifndef LZ77AC_KMP_H
 #define LZ77AC_KMP_H
 
+#include <stdbool.h>
 #include "../bytestr/bytestr.h"
-#include "../charcb/cb/cibuff.h"
 
 typedef struct _prefix_table PrefixTable;
 extern const int NMF;
@@ -19,7 +19,7 @@ void kmp_reset();
 
 void kmp_addc(unsigned char _newbyte);
 
-long kmp_match(CircularBuffer *cb);
+long kmp_match();
 
 size_t kmp_patternlen();
 

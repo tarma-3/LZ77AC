@@ -3,17 +3,13 @@
 //
 
 #include <time.h>
+#include <stdlib.h>
 #include "enc.h"
-#include "../../tools/charcb/cb/cibuff.h"
 #include "../../tools/bitfile/bitfilewriter.h"
-#include "../../tools/bytestr/bytestr.h"
-#include "../../tools/charcb/charcb.h"
+#include "../../tools/scharcb/scharcb.h"
 
-#include "clog.h"
-#include "../lz77.h"
 #include "../../tools/kmp/kmp.h"
 
-static CircularBuffer *dictionary;
 static BitfileWriter *output_file;
 static size_t offset = 0;
 /* lookahbf_id è una variabile che si occupa di tenere in memoria l'indice dell'ultimo carattere all'interno del
@@ -41,8 +37,7 @@ const unsigned int DICTIONARY_SIZE;
 void _finalmatchfound();
 
 void initcompressor(char ext[], char dest[]) {
-    DEBUG_ENABLED = 1;
-    dictionary = uccb_init(DICTIONARY_SIZE);
+    //dictionary = uccb_init(DICTIONARY_SIZE);
     kmp_init();
     output_file = newBitFileWriter(dest);
 #if DEBUG_LZ77_LOG
@@ -74,12 +69,12 @@ void runcompression(unsigned char next_byte) {
     if (kmp_isfull()) {
         _finalmatchfound();
     }// Controllo se troviamo un match
-    else if ((tmp_dm_id = kmp_match(dictionary)) == NMF) {
+    else if ((tmp_dm_id = kmp_match()) == NMF) {
         _finalmatchfound();
     } else {
         dictmatch_id = tmp_dm_id;
     }
-    uccb_push(next_byte, dictionary);
+    uccb_push(next_byte);
 }
 
 
@@ -97,7 +92,7 @@ void _finalmatchfound() {
         write_bit(0, output_file);
     }
     write_bits(8, (unsigned char) kmp_getlastc(), output_file);
-    cb_reset(dictionary);
+    uccb_reset();
     kmp_reset();
     lookahbf_id = 0;
     dictmatch_id = -1;
@@ -119,7 +114,6 @@ void terminatecompression() {
         write_bits(4, (unsigned int) (kmp_patternlen()), output_file);
 #if DEBUG_LZ77_LOG
         __log_lz77_dcwrite_TERMINATE();
-
 #endif
     }
     flushCloseBitfileWriter(output_file);

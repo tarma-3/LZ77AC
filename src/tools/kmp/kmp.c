@@ -8,7 +8,7 @@
 //
 
 #include "../charcb/cb/cibuff.h"
-#include "../charcb/charcb.h"
+#include "../scharcb/scharcb.h"
 #include "../../lz77/lz77.h"
 #include "kmplog.h"
 #include <stdlib.h>
@@ -97,25 +97,25 @@ void _kmp_updateTable() {
 
 long kmp_match(CircularBuffer *cb) {
     //clock_t begin = clock();
-    while (uccb_hasnext(cb)) {
+    while (uccb_hasnext()) {
         //hasn_time_end = clock();
        // hasnext_time += (double) (hasn_time_end - hasn_time_begin) / CLOCKS_PER_SEC;
 
-        if (uccb_pointed(cb) == bs_get(pattern, pattern_i)) {
-            uccb_next(cb);
+        if (uccb_pointed() == bs_get(pattern, pattern_i)) {
+            uccb_next();
             ++pattern_i;
         } else {
             if (pattern_i != 0) {
                 pattern_i = (size_t) prefixtable.T[--pattern_i];
             } else {
-                uccb_next(cb);
+                uccb_next();
             }
         }
         if (pattern_i == prefixtable.length) {
             //clock_t end = clock();
 
             //kmp_match_time += (double) (end - begin) / CLOCKS_PER_SEC;
-            return (long) uccb_nofchars(cb) - uccb_getid(cb);
+            return (long) uccb_nofchars() - uccb_getid();
         }
     }
 

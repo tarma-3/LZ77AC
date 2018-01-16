@@ -1,15 +1,14 @@
 
-#include "../../tools/charcb/charcb.h"
+
+#include <stdlib.h>
 #include "../../tools/bytestr/bytestr.h"
 #include "../../tools/bitfile/bitfilereader.h"
-#include "../../tools/bitfile/bitfilewriter.h"
-#include "dlog.h"
 #include "../lz77.h"
+#include "../../tools/scharcb/scharcb.h"
 
 const unsigned int DICTIONARY_SIZE;
 const unsigned int LOOKAHEADB_SIZE;
 
-static CircularBuffer *dictionary;
 static BitfileReader *bfreader;
 static FILE *foutput;
 
@@ -33,7 +32,6 @@ typedef enum _decodestatus {
 
 void initdecompressor(char *source, char *destination) {
     DEBUG_ENABLED = 0;
-    dictionary = uccb_init(DICTIONARY_SIZE);
     bfreader = newBitfileReader("./output.press");
     foutput = fopen("./output.txt", "w");
 #if DEBUG_LZ77_LOG
@@ -94,13 +92,13 @@ void rundecompression() {
                 tern.c = (unsigned char) read_bits(8, bfreader);
                 isEOF = read_checkEOF(bfreader);
                 if (isEOF) {
-                    recovercharfromdict(uccb_nofchars(dictionary), tern);
+                    recovercharfromdict(uccb_nofchars(), tern);
                     break;
                 }
-                recovercharfromdict(uccb_nofchars(dictionary), tern);
+                recovercharfromdict(uccb_nofchars(), tern);
                 //Print new char
                 fprintf(foutput, "%c", tern.c);
-                uccb_push(tern.c, dictionary);
+                uccb_push(tern.c);
                 decodeStatus = DECODE_FLAG;
                 isEOF = read_checkEOF(bfreader);
 #if DEBUG_LZ77_LOG
@@ -116,7 +114,7 @@ void rundecompression() {
                     break;
                 }
                 fprintf(foutput, "%c", tern.c);
-                uccb_push(tern.c, dictionary);
+                uccb_push(tern.c);
 
                 decodeStatus = DECODE_FLAG;
                 isEOF = read_checkEOF(bfreader);
@@ -136,7 +134,7 @@ void rundecompression() {
 void recovercharfromdict(size_t dictsize, Tern tern) {
 
     // Mi posiziono tanti passi indietro quanti mi è stato detto da dictpos
-    cb_setid(dictsize - (unsigned int) tern.dictpos, dictionary);
+    uccb_setid(dictsize - (unsigned int) tern.dictpos);
     //Attenzione, se mi posiziono in First In, il next char viene fatto automaticamente con i push
     //In questo momento sto puntando al primo carattere in cb
 #if DEBUG_LZ77_LOG
@@ -144,13 +142,13 @@ void recovercharfromdict(size_t dictsize, Tern tern) {
 #endif
     for (int i = 0; i < tern.len; ++i) {
         unsigned char chrec;
-        if (uccb_hasnext(dictionary))
-            chrec = uccb_next(dictionary);
+        if (uccb_hasnext())
+            chrec = uccb_next();
         else {
             fprintf(stderr, "Error on recovercharfromdict\n");
             exit(0);
         }
-        uccb_push(chrec, dictionary);
+        uccb_push(chrec);
         fprintf(foutput, "%c", chrec);
 #if DEBUG_LZ77_LOG
         if (DEBUG_ENABLED) __log_decode_PRINT_RECOVERED_CHARS(chrec);
