@@ -8,6 +8,8 @@
 
 typedef struct _circularbuffer CircularBuffer;
 
+extern double cb_hasnext_time;
+
 CircularBuffer *cb_init(size_t capacity, size_t sz);
 
 bool cb_push(const void *newitem, CircularBuffer *cb);

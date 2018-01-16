@@ -2,6 +2,7 @@
 // Created by Enrico on 05.01.18.
 //
 
+#include <time.h>
 #include "cibuff.h"
 
 typedef enum _state {
@@ -64,25 +65,31 @@ bool cb_push(const void *newitem, CircularBuffer *cb) {
     return 1;
 }
 
+double cb_hasnext_time = 0;
+clock_t begin = 0;
 bool cb_hasnext(CircularBuffer *cb) {
+
+    //begin = clock();
+
+
     if (cb->status == BEGIN) {
         if (cb->elements == 0) {
             cb->status = NEXT_NOT_GUARANTEED;
+            //cb_hasnext_time += (double) (clock() - begin) / CLOCKS_PER_SEC;
             return false;
         }
+       // cb_hasnext_time += (double) (clock() - begin) / CLOCKS_PER_SEC;
         return true;
     }
     // Se il prossimo elemento che leggo è il primo ad essere inserito (e quindi il primo a venir letto) allora devo
     // riportare di non aver un prossimo elemento da leggere poichè sono arrivato all'ultimo.
     if ((cb->cu_index + 1) % cb->elements == cb->fi_index) {
         cb->status = NEXT_NOT_GUARANTEED;
-
-
-
-
+        //cb_hasnext_time += (double) (clock() - begin) / CLOCKS_PER_SEC;
         return false;
     }
     cb->status = HAS_NEXT;
+    //cb_hasnext_time += (double) (clock() - begin) / CLOCKS_PER_SEC;
     return true;
 }
 
@@ -100,17 +107,15 @@ size_t cb_getid(CircularBuffer *cb) {
 }
 
 size_t cb_next(void *item, CircularBuffer *cb) {
-    if (cb->status == NEXT_NOT_GUARANTEED) {
+    /*if (cb->status == NEXT_NOT_GUARANTEED) {
         fprintf(stderr, "Error: FIFO -> End of buffer\n");
         exit(1);
-    }
+    }*/
     if (cb->status != BEGIN) cb->cu_index = ++cb->cu_index % cb->elements;
 
     memcpy(item, &(cb->buffer[cb->cu_index]), cb->sz);
-    size_t elementID = cb_getid(cb);
-
     cb->status = NEXT_NOT_GUARANTEED;
-    return elementID;
+    return cb_getid(cb);;
 }
 
 size_t cb_pointed(void *item, CircularBuffer *cb) {

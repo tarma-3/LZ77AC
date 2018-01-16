@@ -14,7 +14,7 @@
 #include "../tools/kmp/kmp.h"
 
 #define FLAG_SIZE 1
-const unsigned int DICTIONARY_SIZE = 2000;
+const unsigned int DICTIONARY_SIZE = 2047;
 const unsigned int LOOKAHEADB_SIZE = 16;
 int DEBUG_ENABLED = 0;
 #define CHAR_SIZE 8
@@ -30,18 +30,20 @@ int DEBUG_ENABLED = 0;
 char *lz77_encode(char source[]) {
     //TODO: Parametrizzare questa chiamata
     double total_timespent = 0;
-    clock_t begin = clock();
+   // clock_t begin = clock();
 
     initcompressor(get_filename_ext(source),"./output.press");
     stream_file_to(source, runcompression);
     terminatecompression();
 
-    clock_t end = clock();
+   // clock_t end = clock();
     //if(DEBUG_ENABLED) stream_file_to("./output.press", __log_bitopen);
-    total_timespent += (double) (end - begin) / CLOCKS_PER_SEC;
-    printf("KMP/Table - Time spent [s]: %8.3lf \n", kmp_buildtable_time);
-    printf("KMP - Time spent [s]: %14.3lf \n", kmp_match_time);
-    printf("TOT - Time spent [s]: %14.3lf \n", total_timespent);
+   // total_timespent = (double) (end - begin) / CLOCKS_PER_SEC;
+    printf("KMP/Table - Time [s]: %8.3lf \n", kmp_buildtable_time);
+    printf("KMP - Time [s]: %14.3lf \n", kmp_match_time);
+    printf("TOT - Time [s]: %14.3lf \n", cb_hasnext_time);
+    printf("TOT - Time [s]: %14.3lf \n", total_timespent);
+
     return "f";
 }
 
