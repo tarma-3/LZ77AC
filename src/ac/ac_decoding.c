@@ -16,31 +16,40 @@ FILE *dec_ranges;
 #endif
 FILE *dec_output;
 
+//Array frequenze
 static int frequency[ARRLEN];
+//Array Element pointers, it will
+//contain every element with specific
+//ranges and attributes each iteration
 static Element *pointer_to_char[ARRLEN];
 static int n = 0;
+//Total char, read from file
 static int total_char;
+
+//Ranges
 static uint32_t old = 0;
 static uint32_t low = 0;
-static uint32_t high = 0xFFFFFFFFU;//0x7FFFFFFF;
-static int flag_exit = 1; //boolean
-static uint32_t output = 0;
+static uint32_t high = 0xFFFFFFFFU;
+
+//Var to stop searching where number
+//falls into after found range
+static int flag_exit = 1;
+//File of the final output
 static FILE *f_out;
 
+//First window 64 bit
 static uint64_t window = 0;
+//second shifting window of 32 bit
 static uint32_t extra_window = 0;
+//How many bit i shifted out of the extra_window
+//when 8 reset anf refill extra window
 static int fill_extra = 0;
 
 //shift
-static int buffer_full = 0;
-static int shift = ARRLEN * 4 + 13;//13;//9;
+static int shift = ARRLEN * 4 + 13;
 static int pending_bits = 0;
 
 void _read_in_32(uint32_t *win);
-
-void _read_endian_32(uint32_t *win) {
-    fread(win, sizeof(uint32_t), 1, f_out);
-}
 
 void check_extra() {
     if (fill_extra == 8) {
@@ -51,12 +60,15 @@ void check_extra() {
     }
 }
 
+/**
+ * Shift the window when i out
+ * equals bit also high and low
+ */
 void shift_window_out() {
 #if DEBUG_FILE_PRINT
     fprintf(dec_ranges, "1 - shift\n");
 #endif
     window = window << 1ULL | 0;
-    //extra_window = extra_window << 1 | 0;
     uint32_t tmp_extra = extra_window & 0x80000000U;
     fill_extra++;
     window = window | (uint64_t) tmp_extra >> 31;
@@ -65,9 +77,9 @@ void shift_window_out() {
     check_extra();
 }
 
-void init_wa() {
+void init_wa(char *ac_output) {
     //prepare files
-    f_out = fopen("ac_output", "rb");
+    f_out = fopen(ac_output, "rb");
     dec_output = fopen("dec_output.txt", "w");
 #if DEBUG_FILE_PRINT
     dec_ranges = fopen("dec_ranges.txt", "w");
@@ -120,21 +132,11 @@ void _read_in_32(uint32_t *win) {
             | (((*win >> 24) & 0xff) << 0);
 }
 
-void read_in_32() {
-    fread(&output, sizeof(uint32_t), 1, f_out);
-    //fread(&output, sizeof(uint32_t), 4, f_out);
-    //00011010  00010010  11110110  10000100
-    //00011010  00010010  11110110  10000100
-    //1000 0100  1111 0110  0001 0010  0001 1010
-    //Little endian
-    //https://stackoverflow.com/questions/14791349/is-fread-on-a-single-integer-affected-by-the-endianness-of-my-system
-    //FORSE CHECK?????????????
-    window = (((window >> 0) & 0xff) << 24)
-            | (((window >> 8) & 0xff) << 16)
-            | (((window >> 16) & 0xff) << 8)
-            | (((window >> 24) & 0xff) << 0);
-}
-
+/**
+ * Adjust the ranges high, low
+ * when shift
+ * @param underflow_bit
+ */
 void adjust_range(int underflow_bit) {
     low = (low << underflow_bit);
     low &= ~(1 << 31);
@@ -144,15 +146,11 @@ void adjust_range(int underflow_bit) {
     high = high | (1 << 31);
 }
 
-void check_full_buffer() {
-    if (buffer_full == 8) {
-        fseek(f_out, shift, SEEK_SET);
-        read_in_32();
-        buffer_full = 0;
-        shift++;
-    }
-}
-
+/**
+ * Adjust the ranges of the windows
+ * when pending bits
+ * @param bits
+ */
 void adjust_output_range(int bits) {
     for (int i = 0; i < bits; i++) {
 #if DEBUG_FILE_PRINT
@@ -171,7 +169,13 @@ void adjust_output_range(int bits) {
     }
 }
 
-//https://stackoverflow.com/questions/199333/how-to-detect-integer-overflow
+/**
+ * This function determinates the index of the highest
+ * bit that is a 1 in the a integer
+ * Fonte: https://stackoverflow.com/questions/199333/how-to-detect-integer-overflow
+ * @param a is the integer where I'm looking for highest 1
+ * @return
+ */
 size_t highestBitPosition(uint32_t a) {
     size_t bits = 0;
     while (a != 0) {
@@ -205,6 +209,7 @@ void dac_ranges(unsigned char next_char, int i) {
         if (is_in_range(p, window >> 32)) {
             //this char as been found
             char c = get_element_char(p);
+            //write it to output
             fwrite(&c, 1, 1, dec_output);
 #if DEBUG_FILE_PRINT
             fprintf(dec_ranges, "The char is: %c\n\n", c);
@@ -229,6 +234,7 @@ void dac_ranges(unsigned char next_char, int i) {
 #if DEBUG_FILE_PRINT
                 fprintf(dec_ranges, "help output: %s\n", int_to_binary(window >> 32, 32));
 #endif
+                //check for pending bits after one bit (shift)
                 char *underflow = underflow_check(int_to_binary(low << 1, 32), int_to_binary(high << 1, 32), 32);
                 int underflow_bit = strlen(underflow);
                 pending_bits += underflow_bit;
@@ -318,10 +324,19 @@ void ac_decode() {
     }
 }
 
+/**
+ * Set the toatl char
+ * @param t_ch total char
+ */
 void set_total_char(int t_ch) {
     total_char = t_ch;
 }
 
+/**
+ * Set array of the frequency
+ * @param frq the array of frequencies
+ * @param len the length of the array
+ */
 void set_frequency(int *frq, int len) {
     for (int i = 0; i < ARRLEN; i++) {
         frequency[i] = frq[i];

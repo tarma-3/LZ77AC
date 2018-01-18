@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#include <time.h>
 #include "ac/ac_encoding.h"
 #include "ac/ac_decoding.h"
 
@@ -45,6 +46,8 @@ int main(int args_number, char *args[]) {
 
     // Option check
     if (strcmp("-c", args[1]) == 0) {
+        clock_t t;
+        t = clock();
         //Build frequencies
         stream_file_to(args[2], build_frequency);
         //Print file Log debug
@@ -56,24 +59,20 @@ int main(int args_number, char *args[]) {
         //stream file to encode to
         //ac_encode
         stream_file_to(args[2], ac_encode);
-
-        // COMPRESSION
-        // ac_encode(lz77_encode(args[1]));
-
-
-        //TEST DECOMPRESSION
-        // ** IN PROGRESS, NOT WORKING **
-        //set_total_char(get_total_char());
-        //set_frequency(get_frequency(), 256);
-        init_wa();
-
-        //stream_array_to(get_frequency(), dac_ranges);
-        ac_decode();
-        //read_output();
+        t = clock() - t;
+        double time_taken = ((double)t)/CLOCKS_PER_SEC;
+        printf("Exec compression: %lf\n",time_taken);
 
     } else if (strcmp("-d", args[1]) == 0) {
         // DECOMPRESSION
         // lz77_decode(ac_decode(args[1]));
+        clock_t t = clock();
+        init_wa(args[2]);
+
+        ac_decode();
+        t = clock() - t;
+        double time_de = ((double)t)/CLOCKS_PER_SEC;
+        printf("Exec DEcompression: %lf\n",time_de);
     } else {
         fprintf(stderr, "Error on first parameter '%s': Invalid option", args[1]);
         exit(107);

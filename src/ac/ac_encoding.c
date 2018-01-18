@@ -37,12 +37,10 @@ static uint32_t old = 0;
 //element in pointer_to_char
 static int n = 0;
 
-//** IN PROGRESS **
-//changing low and high to be
 // integer 32 bit from 0 - 0111 1111 1111 1111 1111 1111 1111 1111
 // (next will be full 1000 0000 0000 0000 0000 0000 0000 0000)
 static uint32_t low = 0;
-static uint32_t high = 0xFFFFFFFFU;//0x7FFFFFFF;
+static uint32_t high = 0xFFFFFFFFU;
 
 //Buffer output to file
 static char buffer[9] = "33333333";
@@ -50,15 +48,8 @@ static char buffer[9] = "33333333";
 //Count char to EOF
 static int counter_to_EOF = 0;
 
+//Total of pending bits
 static int pending_bits = 0;
-
-/**
- *
- * @return int total_char that indicates all char encoded
- */
-int get_total_char() {
-    return (total_char);
-}
 
 /**
  * Manages output to file
@@ -90,19 +81,13 @@ void write_8_bit_to_out(char *bit_to_out) {
     }
 }
 
+/**
+ * This funtion execute only once at the end
+ * of the compression:
+ * write the low integer
+ * empty the buffer
+ */
 void ac_end() {
-    //check pending
-    //TODO
-
-    //fprintf(f_enc, "Pending: %d\n", pending_bits);
-
-    /*low = (low << pending_bits);
-    low &= ~(1 << 31);
-    for (int j = 0; j < pending_bits; j++) {
-        high = (high << 1 | 1);
-    }
-    high = high | (1 << 31);*/
-
     //fill buffer with low val
     write_8_bit_to_out(int_to_binary(low, 32));
     //out last bit in buffer
@@ -115,8 +100,6 @@ void ac_end() {
     long l_bin = binary_to_int(buffer, 32);
     fwrite(&l_bin, 1, 1, f_output);
 
-    //long intval=8;
-    //fwrite(&intval, 1, 1, f_output);
     fclose(f_output);
 }
 
@@ -128,6 +111,12 @@ int *get_frequency() {
     return (frequency);
 }
 
+/**
+ * This function determinates the index of the highest
+ * bit that is a 1 in the a integer
+ * @param a is the integer where I'm looking for highest 1
+ * @return
+ */
 size_t highestOneBitPosition(uint32_t a) {
     size_t bits = 0;
     while (a != 0) {
@@ -150,7 +139,7 @@ void ac_ranges(unsigned char next_char, int i) {
     pointer_to_char[n] = p;
     n++;
 
-    //Overflow
+    //Overflow checking
     size_t a_bits = highestOneBitPosition(get_element_frequency(p)), b_bits = highestOneBitPosition((high - low));
     if (a_bits + b_bits <= 32) {
         set_element_range(p, get_element_frequency(p) * (high - low) / total_char);
@@ -163,11 +152,6 @@ void ac_ranges(unsigned char next_char, int i) {
 #if DEBUG_FILE_PRINT
     //print_element_file(p, f_enc);
 #endif
-
-    //writing output file FINAL output
-    //f_output = fopen("ac_output", "wb");
-    //fprintf(f_output, "%d", (low + high) / 2);
-    // fprintf(f_output, "%s ", int_to_binary(low, 32));
 }
 
 /**
@@ -383,8 +367,4 @@ void print_frequency() {
     }
     fclose(f_freq);
 #endif
-}
-
-void set_to_counter_EOF() {
-    counter_to_EOF++;
 }
