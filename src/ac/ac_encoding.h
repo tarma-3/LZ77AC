@@ -11,7 +11,7 @@ void ac_encode(unsigned char next_char);
 
 void build_frequency(unsigned char next_char);
 
-void print_frequency();
+void init_co();
 
 int *get_frequency();
 

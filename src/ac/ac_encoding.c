@@ -106,26 +106,11 @@ void ac_end() {
 }
 
 /**
- *
+ * return array of frequencies
  * @return int *frequency
  */
 int *get_frequency() {
     return (frequency);
-}
-
-/**
- * This function determinates the index of the highest
- * bit that is a 1 in the a integer
- * @param a is the integer where I'm looking for highest 1
- * @return
- */
-size_t highestOneBitPosition(uint32_t a) {
-    size_t bits = 0;
-    while (a != 0) {
-        ++bits;
-        a >>= 1;
-    }
-    return bits;
 }
 
 /**
@@ -142,11 +127,13 @@ void ac_ranges(unsigned char next_char, int i) {
     n++;
 
     //Overflow checking
-    size_t a_bits = highestOneBitPosition(get_element_frequency(p)), b_bits = highestOneBitPosition((high - low));
-    if (a_bits + b_bits <= 32) {
-        set_element_range(p, get_element_frequency(p) * (high - low) / total_char);
-    } else {
+    uint32_t range_overflow = get_element_frequency(p) * (high - low);
+    if (get_element_frequency(p) != 0 && (range_overflow / get_element_frequency(p) != (high-low))) {
+        //Overflow case
         set_element_range(p, (high - low) / total_char * get_element_frequency(p));
+    }
+    else{
+        set_element_range(p, get_element_frequency(p) * (high - low) / total_char);
     }
     set_element_points(p, old, old + get_element_range(p));
     old += get_element_range(p);
@@ -350,7 +337,7 @@ void ac_encode(unsigned char next_char) {
 }
 
 /**
- *
+ * build the array frequencies
  * @param next_char char to calculate for the frequency array
  */
 void build_frequency(unsigned char next_char) {
@@ -361,10 +348,10 @@ void build_frequency(unsigned char next_char) {
 }
 
 /**
- * Print to Log Debug files
- * init debug files
+ * init files
+ * write total_char, frq.
  */
-void print_frequency() {
+void init_co() {
     f_output = fopen("ac_output", "wb");
     //char sul file
     fwrite(&total_char, 1, sizeof(uint32_t), f_output);

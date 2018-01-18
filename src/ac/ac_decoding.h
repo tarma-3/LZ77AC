@@ -7,7 +7,7 @@
 #ifndef LZ77AC_AC_DECODING_H
 #define LZ77AC_AC_DECODING_H
 
-void dac_ranges(unsigned char next_char, int i);
+void dac_ranges(int i);
 
 void ac_decode();
 

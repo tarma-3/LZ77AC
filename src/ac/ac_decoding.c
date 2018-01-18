@@ -51,6 +51,11 @@ static int pending_bits = 0;
 
 void _read_in_32(uint32_t *win);
 
+/**
+ * Check if the extra window lost 8 bit
+ * in that case update the extra_window
+ * with the new byte
+ */
 void check_extra() {
     if (fill_extra == 8) {
         fseek(f_out, shift, SEEK_SET);
@@ -61,7 +66,7 @@ void check_extra() {
 }
 
 /**
- * Shift the window when i out
+ * Shift the window when out
  * equals bit also high and low
  */
 void shift_window_out() {
@@ -77,6 +82,14 @@ void shift_window_out() {
     check_extra();
 }
 
+/**
+ * This function has to be called before
+ * the real decompression, it reads:
+ * 1. total_char
+ * 2. frequency array
+ * 3. init the windows
+ * @param ac_output the file compressed
+ */
 void init_wa(char *ac_output) {
     //prepare files
     f_out = fopen(ac_output, "rb");
@@ -117,21 +130,27 @@ void init_wa(char *ac_output) {
     _read_in_32(&extra_window);
 }
 
+/**
+ * Function that check if the system
+ * is using little endian encoding
+ * (I had problem with my computer)
+ * @return is the system using little ednian encoding
+ */
 int is_little_endian() {
     uint32_t magic = 0x00000001;
     uint8_t black_magic = *(uint8_t *)&magic;
     return black_magic;
 }
 
+/**
+ * read next 32 bit from compresed file in a specified window
+ * @param *win the windows where the 32 bit will be saved
+ */
 void _read_in_32(uint32_t *win) {
     fread(win, sizeof(uint32_t), 1, f_out);
-    //fread(&output, sizeof(uint32_t), 4, f_out);
-    //00011010  00010010  11110110  10000100
-    //00011010  00010010  11110110  10000100
-    //1000 0100  1111 0110  0001 0010  0001 1010
     //Little endian
+    //source correction:
     //https://stackoverflow.com/questions/14791349/is-fread-on-a-single-integer-affected-by-the-endianness-of-my-system
-    //FORSE CHECK?????????????
     if(is_little_endian()) {
         *win = (((*win >> 0) & 0xff) << 24)
                 | (((*win >> 8) & 0xff) << 16)
@@ -178,22 +197,12 @@ void adjust_output_range(int bits) {
 }
 
 /**
- * This function determinates the index of the highest
- * bit that is a 1 in the a integer
- * Fonte: https://stackoverflow.com/questions/199333/how-to-detect-integer-overflow
- * @param a is the integer where I'm looking for highest 1
- * @return
+ * 1. Calculate the range
+ * 2. Check if the window falls into range
+ *  2.1 update windows and low/high
+ * @param i index from the array of frequencies
  */
-size_t highestBitPosition(uint32_t a) {
-    size_t bits = 0;
-    while (a != 0) {
-        ++bits;
-        a >>= 1;
-    }
-    return bits;
-}
-
-void dac_ranges(unsigned char next_char, int i) {
+void dac_ranges(int i) {
     if (flag_exit) {
         //Create new element
         Element *p = init_element((unsigned char) i, frequency[i]);
@@ -202,11 +211,12 @@ void dac_ranges(unsigned char next_char, int i) {
 
         //Calculating and updating element ranges
         //Overflow
-        size_t a_bits = highestBitPosition(get_element_frequency(p)), b_bits = highestBitPosition((high - low));
-        if (a_bits + b_bits <= 32) {
-            set_element_range(p, get_element_frequency(p) * (high - low) / total_char);
-        } else {
+        uint32_t range_overflow = get_element_frequency(p) * (high - low);
+        if (get_element_frequency(p) != 0 && range_overflow / get_element_frequency(p) != (high-low)) {
             set_element_range(p, (high - low) / total_char * get_element_frequency(p));
+        }
+        else{
+            set_element_range(p, get_element_frequency(p) * (high - low) / total_char);
         }
         set_element_points(p, old, old + get_element_range(p));
         old += get_element_range(p);
@@ -314,6 +324,12 @@ void dac_ranges(unsigned char next_char, int i) {
     }
 }
 
+/**
+ * Enter this function once
+ * called after init_wa
+ * and then execute until the the end of decompression,
+ * meaning it decoded every total_char
+ */
 void ac_decode() {
     for (int k = 0; k < total_char; k++) {
 #if DEBUG_FILE_PRINT
@@ -328,7 +344,7 @@ void ac_decode() {
         //Part to re-calculate every range
         for (int i = 0; i < ARRLEN; i++) {
             if (frequency[i] != 0) {
-                dac_ranges((unsigned char) frequency[i], i);
+                dac_ranges(i);
             }
         }
         flag_exit = 1;

@@ -110,7 +110,6 @@ char *check_output_range(char *low, char *high, int size) {
 
     char *to_output = (char *) malloc(size);
     int j = 0;
-
     for (int i = 0; i < size; i++) {
         if (low[i] == high[i]) {
             to_output[j] = low[i];
