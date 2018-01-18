@@ -89,7 +89,9 @@ void write_8_bit_to_out(char *bit_to_out) {
  */
 void ac_end() {
     //fill buffer with low val
-    write_8_bit_to_out(int_to_binary(low, 32));
+    char *low_bin=int_to_binary(low, 32);
+    write_8_bit_to_out(low_bin);
+    free(low_bin);
     //out last bit in buffer
     for (int i = 0; i < 8; i++) {
         if (!(buffer[i] != '3')) {
@@ -181,9 +183,16 @@ void ac_encode(unsigned char next_char) {
                 high_bin = int_to_binary(high, size);
             }
 
+
+            /*low_bin = int_to_binary(low, size);
+            high_bin = int_to_binary(high, size);*/
+
             //Binary bit that don't change this will be sent out
             //and ranges will update
             char *real_bit_to_out = check_output_range(low_bin, high_bin, size);
+
+            free(low_bin);
+            free(high_bin);
 
             //every 8 bit
             if (pending_bits == 0) {
@@ -262,7 +271,14 @@ void ac_encode(unsigned char next_char) {
                 }
             }
 
-            char *underflow = underflow_check(int_to_binary(low << 1, 32), int_to_binary(high << 1, 32), 32);
+            char *shifted_low=int_to_binary(low << 1, 32);
+            char *shifted_high=int_to_binary(high << 1, 32);
+
+            char *underflow = underflow_check(shifted_low, shifted_high, 32);
+
+            free(shifted_low);
+            free(shifted_high);
+
             uint32_t underflow_bit = strlen(underflow);
             pending_bits += underflow_bit;
 
@@ -273,7 +289,6 @@ void ac_encode(unsigned char next_char) {
             }
             high = high | (1 << 31);
 
-            //free
             free(low_bin);
             free(high_bin);
 
@@ -292,6 +307,7 @@ void ac_encode(unsigned char next_char) {
             free(low_bin);
             free(high_bin);
             free(real_bit_to_out);
+            free(bit_to_out);
             free(underflow);
         }
     }
@@ -309,7 +325,7 @@ void ac_encode(unsigned char next_char) {
     //free pointer?
     for (int i = 0; i < ARRLEN; i++) {
         free_element(pointer_to_char[i]);
-        pointer_to_char[i] = 0;
+        pointer_to_char[i] = NULL;
     }
 
     //Part to re-calculate every range

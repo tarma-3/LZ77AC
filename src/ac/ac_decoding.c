@@ -243,7 +243,13 @@ void dac_ranges(unsigned char next_char, int i) {
                 fprintf(dec_ranges, "help output: %s\n", int_to_binary(window >> 32, 32));
 #endif
                 //check for pending bits after one bit (shift)
-                char *underflow = underflow_check(int_to_binary(low << 1, 32), int_to_binary(high << 1, 32), 32);
+                char *shifted_low=int_to_binary(low << 1, 32);
+                char *shifted_high=int_to_binary(high << 1, 32);
+                char *underflow = underflow_check(shifted_low, shifted_high, 32);
+
+                free(shifted_low);
+                free(shifted_high);
+
                 int underflow_bit = strlen(underflow);
                 pending_bits += underflow_bit;
 
@@ -256,13 +262,21 @@ void dac_ranges(unsigned char next_char, int i) {
                 //Shift calcolo pending
                 uint32_t shifted_low = low;
                 uint32_t shifted_high = high;
+
                 for (int j = 0; j < strlen(real_bit_to_out); j++) {
                     shifted_low = shifted_low << 1;
                     shifted_high = (shifted_high << 1) | 1;
                 }
+
+                char *pending_low_shifted=int_to_binary(shifted_low << 1, 32);
+                char *pending_high_shifted=int_to_binary(shifted_high << 1, 32);
+
                 //pending
-                char *underflow = underflow_check(int_to_binary(shifted_low << 1, 32),
-                                                  int_to_binary(shifted_high << 1, 32), 32);
+                char *underflow = underflow_check(pending_low_shifted, pending_high_shifted, 32);
+
+                free(pending_low_shifted);
+                free(pending_high_shifted);
+
                 int underflow_bit = strlen(underflow);
                 pending_bits += underflow_bit;
 
@@ -281,10 +295,6 @@ void dac_ranges(unsigned char next_char, int i) {
                 adjust_range(underflow_bit);
                 pending_bits = 0;
             }
-
-            //update to print
-            low_bin = int_to_binary(low, size);
-            high_bin = int_to_binary(high, size);
 #if DEBUG_FILE_PRINT
             fprintf(dec_ranges, "\nBinary rappresentation\n START %s\n END   %s\n\n", low_bin,
                     high_bin);
@@ -294,10 +304,9 @@ void dac_ranges(unsigned char next_char, int i) {
             fprintf(dec_ranges, "\nOutput:\t%u - %s%s\n\n", window >> 32, int_to_binary(window >> 32, 32),
                     int_to_binary(window, 32));
 #endif
-            //free
+            free(real_bit_to_out);
             free(low_bin);
             free(high_bin);
-            free(real_bit_to_out);
 
             flag_exit = 0;
             return;
@@ -314,7 +323,7 @@ void ac_decode() {
         //free pointer
         for (int i = 0; i < ARRLEN; i++) {
             free_element(pointer_to_char[i]);
-            pointer_to_char[i] = 0;
+            pointer_to_char[i] = NULL;
         }
         //Part to re-calculate every range
         for (int i = 0; i < ARRLEN; i++) {

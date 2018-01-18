@@ -89,12 +89,12 @@ void set_element_frequency(Element *el, uint32_t frq) {
  * binary value
  */
 char *int_to_binary(unsigned int val, int sz) {
-    char *ptr_to_char=malloc(sizeof(char)*(sz-1));
+    char *ptr_to_char=malloc(sizeof(char)*(sz+1));
     int mask = 1;
     mask = mask << (sz-1);
     int i;
     for (i = 0; i <= sz; i++) {
-        ptr_to_char[i]=(((val & mask) == 0) ? '0' : '1');
+        ptr_to_char[i]=(char)(((val & mask) == 0) ? '0' : '1');
         val = val << 1;
     }
     ptr_to_char[sz]='\0';
