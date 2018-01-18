@@ -33,10 +33,6 @@ int stream_array_to(int frequency[], void (*output_handler)(unsigned char, int))
     return 1;
 }
 
-void print_char(unsigned char c) {
-    printf("%c", c);
-}
-
 int main(int args_number, char *args[]) {
 
     if (args_number != 3) {
@@ -76,12 +72,6 @@ int main(int args_number, char *args[]) {
     } else {
         fprintf(stderr, "Error on first parameter '%s': Invalid option", args[1]);
         exit(107);
-    }
-    // Check if file exists
-    if (!stream_file_to(args[2], print_char)) {
-        // If file not exists
-        fprintf(stderr, "Error on 2nd parameter '%s': %s\n", args[2], strerror(errno));
-        exit(errno);
     }
 
     return 0;

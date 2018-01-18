@@ -190,10 +190,6 @@ void ac_encode(unsigned char next_char) {
                 write_8_bit_to_out(real_bit_to_out);
             }
 
-            //free
-            free(low_bin);
-            free(high_bin);
-
             low_bin = int_to_binary(low, size);
             high_bin = int_to_binary(high, size);
 

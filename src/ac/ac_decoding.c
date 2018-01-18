@@ -117,6 +117,12 @@ void init_wa(char *ac_output) {
     _read_in_32(&extra_window);
 }
 
+int is_little_endian() {
+    uint32_t magic = 0x00000001;
+    uint8_t black_magic = *(uint8_t *)&magic;
+    return black_magic;
+}
+
 void _read_in_32(uint32_t *win) {
     fread(win, sizeof(uint32_t), 1, f_out);
     //fread(&output, sizeof(uint32_t), 4, f_out);
@@ -126,10 +132,12 @@ void _read_in_32(uint32_t *win) {
     //Little endian
     //https://stackoverflow.com/questions/14791349/is-fread-on-a-single-integer-affected-by-the-endianness-of-my-system
     //FORSE CHECK?????????????
-    *win = (((*win >> 0) & 0xff) << 24)
-            | (((*win >> 8) & 0xff) << 16)
-            | (((*win >> 16) & 0xff) << 8)
-            | (((*win >> 24) & 0xff) << 0);
+    if(is_little_endian()) {
+        *win = (((*win >> 0) & 0xff) << 24)
+                | (((*win >> 8) & 0xff) << 16)
+                | (((*win >> 16) & 0xff) << 8)
+                | (((*win >> 24) & 0xff) << 0);
+    }
 }
 
 /**
@@ -273,10 +281,6 @@ void dac_ranges(unsigned char next_char, int i) {
                 adjust_range(underflow_bit);
                 pending_bits = 0;
             }
-
-            //free
-            free(low_bin);
-            free(high_bin);
 
             //update to print
             low_bin = int_to_binary(low, size);
