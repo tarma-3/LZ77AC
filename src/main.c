@@ -50,8 +50,6 @@ int main(int args_number, char *args[]) {
         printf("Exec compression: %lf\n",time_taken);
 
     } else if (strcmp("-d", args[1]) == 0) {
-        // DECOMPRESSION
-        // lz77_decode(ac_decode(args[1]));
         clock_t t = clock();
 
         init_wa(args[2]);

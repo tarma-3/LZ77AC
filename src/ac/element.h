@@ -2,6 +2,7 @@
 // Created by alice on 25.10.17.
 //
 #include <stdint.h>
+#include <stdio.h>
 
 #ifndef LZ77AC_ELEMENT_H
 #define LZ77AC_ELEMENT_H
