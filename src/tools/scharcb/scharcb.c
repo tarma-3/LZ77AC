@@ -7,9 +7,6 @@
 #include "scharcb.h"
 
 // "Constructors & destructors"
-typedef enum _state {
-    BEGIN, HAS_NEXT, NEXT_NOT_GUARANTEED
-} STATE;
 
 static const int CAPACITY = 2047;
 static unsigned char _buffer[CAPACITY];
@@ -17,8 +14,7 @@ static int _elements = 0;
 static int _fi_index = 0;
 static int _bf_index = 0;
 
-
-
+// A differenza dei file in charcb, questo circular buffer fa uso di un array statico per aumentare le prestazioni
 void uccb_push(unsigned char newitem) {
     // Nel caso il buffer non sia pieno e quindi non sovrascriviamo nessun carattere
     if (_elements < CAPACITY) {
@@ -43,10 +39,16 @@ size_t uccb_getid() {
     return _bf_index - 1;
 }
 
+/**
+ * Ritorna il valore puntato  e passa al prossimo carattere
+ */
 unsigned char uccb_next() {
     return _buffer[(_fi_index + _bf_index++) % _elements];
 }
 
+/**
+ * Ritorna il carattere puntato
+ */
 unsigned char uccb_pointed() {
     return _buffer[(_fi_index + _bf_index) % _elements];
 }

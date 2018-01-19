@@ -45,19 +45,13 @@ void initcompressor(char ext[], char dest[]) {
 #endif
 }
 
-static long charswritten = 0;
 
 void runcompression(unsigned char next_byte) {
 #if DEBUG_LZ77_LOG
     if (DEBUG_ENABLED)__log_lz77_vpassages_run_encode_CALL(next_byte); // log chiamata metodo
 #endif
     //TODO: DEBUG ONLY
-    //  if (charswritten >= 50)
-    // DEBUG_ENABLED = 1;
-    // if (charswritten >= 50 + 50)
-    // exit(0);
-    charswritten++;
-    //END OF DEBUG
+
 
     lastwasfinalmatch = false;
 
@@ -65,7 +59,6 @@ void runcompression(unsigned char next_byte) {
 
     kmp_addc(next_byte);
 
-    //TODO: EXPERIMENTAL
     if (kmp_isfull()) {
         _finalmatchfound();
     }// Controllo se troviamo un match
