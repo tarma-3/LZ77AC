@@ -8,5 +8,5 @@ extern const unsigned int DICTIONARY_SIZE;
 extern const unsigned int LOOKAHEADB_SIZE;
 extern int DEBUG_ENABLED;
 char *lz77_encode(char source[]);
-char *lz77_decode(char args[]);
+char *lz77_decode(char args[],char dest[]);
 #endif //LZ77AC_LZ77_H

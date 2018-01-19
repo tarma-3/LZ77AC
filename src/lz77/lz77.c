@@ -3,6 +3,7 @@
 //
 
 #include <time.h>
+#include <string.h>
 #include "lz77.h"
 
 #include "../tools/file/file.h"
@@ -45,9 +46,10 @@ char *lz77_encode(char source[]) {
     return "f";
 }
 
-char *lz77_decode(char args[]) {
+char *lz77_decode(char args[],char dest[]) {
     //TODO: Parametrizzare questa chiamata
-    initdecompressor("./output.press", "./output");
+    dest[strlen(dest)-get_extlen(dest)]='\0';
+    initdecompressor(args, dest);
     rundecompression();
     return "f";
 }

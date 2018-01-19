@@ -93,7 +93,7 @@ void shift_window_out() {
 void init_wa(char *ac_output) {
     //prepare files
     f_out = fopen(ac_output, "rb");
-    dec_output = fopen("dec_output.txt", "w");
+    dec_output = fopen("tmp", "w");
 #if DEBUG_FILE_PRINT
     dec_ranges = fopen("dec_ranges.txt", "w");
 #endif
@@ -351,6 +351,7 @@ void ac_decode() {
         old = low;
         n = 0;
     }
+    fclose(dec_output);
 }
 
 /**

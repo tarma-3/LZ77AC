@@ -56,8 +56,8 @@ int main(int args_number, char *args[]) {
 
         init_wa(args[2]);
         ac_decode();
-        //lz77_decode("output.txt");
-        //remove("output.txt");
+        lz77_decode("tmp",args[2]);
+        remove("tmp");
         t = clock() - t;
         double time_de = ((double)t)/CLOCKS_PER_SEC;
         printf("Exec DEcompression: %lf\n",time_de);
