@@ -1,0 +1,61 @@
+\documentclass{article}
+\usepackage{graphicx}
+\usepackage[utf8]{inputenc}
+\usepackage{listings}
+\usepackage{hyperref}
+\usepackage{color,soul}
+\title{Progetto parte arithmetic coding}
+\author{Alice Mariotti Nesurini, I2AC}
+\date{}
+
+\begin{document}
+\maketitle
+
+\section{Struttura codice}
+
+\subsection{Utilizzo}
+\null
+Compressione\\
+LZ77AC -c ../../LZ77AC/test/alice\\\\
+\null
+Decompressione\\
+LZ77AC -d ../../LZ77AC/test/alice.press
+
+
+\section{Tempi compressione/decompressione}
+\null
+\begin{tabular}{lllll}
+	Nome  & Size originale & Size compresso & Compressione [s] & Decompressione [s]\\
+	\hline
+	Alice.txt & 163.8 [kB] & 95 [kB] & 1.57 & 1.35\\
+	Immagine.tiff & 3.4 [MB] & 3.2 [MB] & 66.3 & 31.5\\
+	32k\_ff & 32.8 [kB] & 1 [kB] & 0.11 & 0.09\\
+	32k\_random & 32.8 [kB] & 33.8 [kB] & 0.59 & 0.36\\
+	ff\_ff\_ff & 3 [B] & 1 [kB] & 0.00 & 0.00\\
+\end{tabular}
+
+%tabella enrico
+
+%tablela insieme
+
+\section{Problemi}
+
+\subsection{Arithmetic coding}
+
+Ho avuto svariati problemi nel ripulire correttamente la memoria, il problema più complesso da rilevare era un errore che accadeva solo ogni tanto su un sistema OSx (non appariva sul mio OS ubunutu), per risolvere questo problema ho dovuto fare molto debug e per aiutarmi ho utilizzato valgrind.
+\\\\
+Nel leggere il file compresso ho trovato che dei byte venivano letti diversamente (sistema little endian) mentre su altre macchine il sistema funzionava, per risolvero quando leggo il file controllo se devo convertire in little endian e faccio lo swap dei byte necessari.
+\url{https://en.wikipedia.org/wiki/Endianness}
+\\\\
+\hl{Ho dovuto fare attenzione ai range che non andassero in overflow (con la moltiplicazione).}
+\\\\
+\hl{capire sistema pending bit}
+\\\\
+Il passaggio del numero totale di caratteri codificati e dell'array delle frequenze è stata un'aggiunta relativamente recente, e con questa aggiunta la dimensione dei miei file compressi aumenta notevolmente, ma visto che non ho sviluppato un algoritmo addattivo, nel mio file sono obbligata a scrivere questi dati essendo che il compressore non ha modo di avere queste informazioni in altri modi.
+
+\section{Sviluppi futuri}
+
+\subsection{Consistenza dati}
+Srebbe stato opportuno applicare l'arithmetic coding sul dizi
+
+\end{document}
