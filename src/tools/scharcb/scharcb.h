@@ -18,7 +18,6 @@ void uccb_push(unsigned char uchar);
 size_t uccb_getid();
 void uccb_reset();
 
-unsigned char uccb_read(size_t id);
 unsigned char uccb_next();
 unsigned char uccb_pointed();
 bool uccb_hasnext();

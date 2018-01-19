@@ -30,16 +30,16 @@ int DEBUG_ENABLED = 0;
 char *lz77_encode(char source[]) {
     //TODO: Parametrizzare questa chiamata
     double total_timespent = 0;
-   // clock_t begin = clock();
+    clock_t begin = clock();
 
     initcompressor(get_filename_ext(source),"./output.press");
     stream_file_to(source, runcompression);
     printf("Terminating");
     terminatecompression();
 
-   // clock_t end = clock();
+    clock_t end = clock();
     //if(DEBUG_ENABLED) stream_file_to("./output.press", __log_bitopen);
-   // total_timespent = (double) (end - begin) / CLOCKS_PER_SEC;
+     total_timespent = (double) (end - begin) / CLOCKS_PER_SEC;
     printf("TOT - Time [s]: %14.3lf \n", total_timespent);
 
     return "f";

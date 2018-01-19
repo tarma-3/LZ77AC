@@ -67,6 +67,7 @@ bool cb_push(const void *newitem, CircularBuffer *cb) {
 
 double cb_hasnext_time = 0;
 clock_t begin = 0;
+
 bool cb_hasnext(CircularBuffer *cb) {
 
     //begin = clock();
@@ -78,7 +79,7 @@ bool cb_hasnext(CircularBuffer *cb) {
             //cb_hasnext_time += (double) (clock() - begin) / CLOCKS_PER_SEC;
             return false;
         }
-       // cb_hasnext_time += (double) (clock() - begin) / CLOCKS_PER_SEC;
+        // cb_hasnext_time += (double) (clock() - begin) / CLOCKS_PER_SEC;
         return true;
     }
     // Se il prossimo elemento che leggo è il primo ad essere inserito (e quindi il primo a venir letto) allora devo
@@ -111,7 +112,7 @@ size_t cb_next(void *item, CircularBuffer *cb) {
         fprintf(stderr, "Error: FIFO -> End of buffer\n");
         exit(1);
     }*/
-    if (cb->status != BEGIN) cb->cu_index = ++cb->cu_index % cb->elements;
+    if (cb->status != BEGIN) cb->cu_index = (++cb->cu_index) % cb->elements;
 
     memcpy(item, &(cb->buffer[cb->cu_index]), cb->sz);
     cb->status = NEXT_NOT_GUARANTEED;

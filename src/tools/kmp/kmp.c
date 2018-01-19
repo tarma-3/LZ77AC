@@ -95,7 +95,7 @@ void _kmp_updateTable() {
 }
 
 
-long kmp_match(CircularBuffer *cb) {
+long kmp_match() {
     //clock_t begin = clock();
     while (uccb_hasnext()) {
         //hasn_time_end = clock();

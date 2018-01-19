@@ -135,6 +135,7 @@ void recovercharfromdict(size_t dictsize, Tern tern) {
 
     // Mi posiziono tanti passi indietro quanti mi è stato detto da dictpos
     uccb_setid(dictsize - (unsigned int) tern.dictpos);
+    //printf("%d ",tern.dictpos);
     //Attenzione, se mi posiziono in First In, il next char viene fatto automaticamente con i push
     //In questo momento sto puntando al primo carattere in cb
 #if DEBUG_LZ77_LOG
