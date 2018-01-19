@@ -351,8 +351,9 @@ void build_frequency(unsigned char next_char) {
  * init files
  * write total_char, frq.
  */
-void init_co() {
-    f_output = fopen("ac_output", "wb");
+void init_co(char *outputname) {
+    printf("%s",outputname);
+    f_output = fopen(outputname, "wb");
     //char sul file
     fwrite(&total_char, 1, sizeof(uint32_t), f_output);
 

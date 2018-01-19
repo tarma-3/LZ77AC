@@ -21,6 +21,11 @@ BitfileReader *newBitfileReader(const char *path) {
     return bf;
 }
 
+void closeBitfileReader(BitfileReader *fp){
+    fclose(fp->file);
+    free(fp);
+}
+
 unsigned char read_bit(BitfileReader *fp) {
     if (fp->bbsize == 0) {
         int newbyte;

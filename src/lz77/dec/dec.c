@@ -129,6 +129,8 @@ void rundecompression() {
                 exit(23);
         }
     }
+    //fclose(foutput);
+    //closeBitfileReader(bfreader);
 }
 
 void recovercharfromdict(size_t dictsize, Tern tern) {

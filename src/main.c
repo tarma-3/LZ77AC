@@ -5,21 +5,9 @@
 #include <time.h>
 #include "ac/ac_encoding.h"
 #include "ac/ac_decoding.h"
+#include "lz77/lz77.h"
+#include "tools/file/file.h"
 
-int stream_file_to(char *args, void (*output_handler)(unsigned char)) {
-    // This function return 1 if the file exists
-    FILE *input;
-    int next_char;
-    if ((input = fopen(args, "r")) != 0 && ((next_char = fgetc(input)) >= 0)) {
-        while (next_char != EOF) {
-            output_handler((unsigned char) next_char);
-            next_char = fgetc(input);
-        }
-        fclose(input);
-        return 1;
-    }
-    return 0;
-}
 
 int stream_array_to(int frequency[], void (*output_handler)(unsigned char, int)) {
     //Send each char with relative frequency from array frequency
@@ -34,7 +22,6 @@ int stream_array_to(int frequency[], void (*output_handler)(unsigned char, int))
 }
 
 int main(int args_number, char *args[]) {
-
     if (args_number != 3) {
         printf("usage: a.out option source_file");
         exit(2);
@@ -45,16 +32,18 @@ int main(int args_number, char *args[]) {
         clock_t t;
         t = clock();
 
-        //Build frequencies
-        stream_file_to(args[2], build_frequency);
-        //init files and write total_char, frq
-        init_co();
-        //Stream the frequency array to
-        //build ranges first time
+        size_t extlen = get_extlen(args[2]);
+        char outputname[strlen(args[2])+5];
+        strcpy(outputname,args[2]);
+        strcpy(&outputname[strlen(args[2])-extlen],".press");
+
+        lz77_encode(args[2]);
+        stream_file_to("tmp.press", build_frequency);
+        init_co(outputname);
         stream_array_to(get_frequency(), ac_ranges);
-        //stream file to encode to
-        //ac_encode
-        stream_file_to(args[2], ac_encode);
+        stream_file_to("tmp.press", ac_encode);
+
+        remove("tmp.press");
 
         t = clock() - t;
         double time_taken = ((double)t)/CLOCKS_PER_SEC;
@@ -67,7 +56,8 @@ int main(int args_number, char *args[]) {
 
         init_wa(args[2]);
         ac_decode();
-
+        //lz77_decode("output.txt");
+        //remove("output.txt");
         t = clock() - t;
         double time_de = ((double)t)/CLOCKS_PER_SEC;
         printf("Exec DEcompression: %lf\n",time_de);

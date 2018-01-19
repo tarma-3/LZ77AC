@@ -28,11 +28,11 @@ int DEBUG_ENABLED = 0;
 
 
 char *lz77_encode(char source[]) {
-    //TODO: Parametrizzare questa chiamata
+
     double total_timespent = 0;
     clock_t begin = clock();
 
-    initcompressor(get_filename_ext(source),"./output.press");
+    initcompressor(get_filename_ext(source),"./tmp.press");
     stream_file_to(source, runcompression);
     printf("Terminating");
     terminatecompression();

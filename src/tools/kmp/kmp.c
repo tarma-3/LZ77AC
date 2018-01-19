@@ -15,7 +15,7 @@
 #include <time.h>
 
 
-static const size_t MAX_MATCH = 16;
+#define MAX_MATCH 16
 static PrefixTable prefixtable;
 
 static bool isinit = false;
