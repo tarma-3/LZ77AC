@@ -32,11 +32,8 @@ typedef enum _decodestatus {
 
 void initdecompressor(char *source, char *destination) {
     DEBUG_ENABLED = 0;
-    bfreader = newBitfileReader("./output.press");
-    foutput = fopen("./output.txt", "w");
-#if DEBUG_LZ77_LOG
-    __init_dec_log(source);
-#endif
+    bfreader = newBitfileReader(source);
+    foutput = fopen(destination, "w");
 }
 
 void rundecompression() {
@@ -129,6 +126,8 @@ void rundecompression() {
                 exit(23);
         }
     }
+    fclose(foutput);
+    closeBitfileReader(bfreader);
 }
 
 void recovercharfromdict(size_t dictsize, Tern tern) {

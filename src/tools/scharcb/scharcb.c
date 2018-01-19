@@ -8,7 +8,7 @@
 
 // "Constructors & destructors"
 
-static const int CAPACITY = 2047;
+#define CAPACITY 2047
 static unsigned char _buffer[CAPACITY];
 static int _elements = 0;
 static int _fi_index = 0;

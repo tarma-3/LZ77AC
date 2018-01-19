@@ -8,4 +8,5 @@ typedef struct _bitfiler BitfileReader;
 BitfileReader *newBitfileReader(const char *path);
 unsigned int read_bits(unsigned int bitsreq, BitfileReader *fp);
 unsigned int read_checkEOF(BitfileReader *fp);
+void closeBitfileReader(BitfileReader *fp);
 #endif //LZ77AC_BITFILEREADER_H

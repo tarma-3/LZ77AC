@@ -3,6 +3,7 @@
 //
 
 #include <time.h>
+#include <string.h>
 #include "lz77.h"
 
 #include "../tools/file/file.h"
@@ -28,11 +29,11 @@ int DEBUG_ENABLED = 0;
 
 
 char *lz77_encode(char source[]) {
-    //TODO: Parametrizzare questa chiamata
+
     double total_timespent = 0;
     clock_t begin = clock();
 
-    initcompressor(get_filename_ext(source),"./output.press");
+    initcompressor(get_filename_ext(source),"./tmp.press");
     stream_file_to(source, runcompression);
     printf("Terminating");
     terminatecompression();
@@ -45,9 +46,10 @@ char *lz77_encode(char source[]) {
     return "f";
 }
 
-char *lz77_decode(char args[]) {
+char *lz77_decode(char args[],char dest[]) {
     //TODO: Parametrizzare questa chiamata
-    initdecompressor("./output.press", "./output");
+    dest[strlen(dest)-get_extlen(dest)]='\0';
+    initdecompressor(args, dest);
     rundecompression();
     return "f";
 }
